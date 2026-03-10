@@ -84,7 +84,22 @@ devschool-platform/
 | Endpoint | Metódus | Leírás |
 |----------|---------|--------|
 | `/health` | GET | Health check |
+| `/api/auth/login` | GET | GitHub OAuth bejelentkezés |
+| `/api/auth/callback` | GET | OAuth callback |
+| `/api/auth/me` | GET | Aktuális felhasználó adatai |
+| `/api/auth/refresh` | POST | Token frissítés |
+| `/api/courses` | GET | Kurzusok listázása |
+| `/api/courses/{id}` | GET | Kurzus részletei |
+| `/api/me/dashboard` | GET | Felhasználói dashboard |
+| `/api/me/certificates` | GET | Tanúsítványok listája |
+| `/api/verify/{cert_id}` | GET | Tanúsítvány publikus verifikáció |
+
+## Hozzájárulás
+
+Szívesen fogadjuk a hozzájárulásokat! Olvasd el a [CONTRIBUTING.md](CONTRIBUTING.md) fájlt a részletekért.
+
+A `good first issue` címkéjű [issue-k](../../issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) ideálisak kezdőknek.
 
 ## Licensz
 
-MIT
+A projekt az [MIT License](LICENSE) alatt érhető el.

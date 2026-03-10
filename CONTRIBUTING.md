@@ -1,0 +1,143 @@
+# Hozzájárulás a DevSchool Platformhoz
+
+Köszönjük, hogy hozzá szeretnél járulni a DevSchool fejlesztéséhez! Ez az útmutató segít az indulásban.
+
+## Hogyan indulj el
+
+### 1. Fork és klónozás
+
+```bash
+# Forkold a repót a GitHubon, majd klónozd
+git clone https://github.com/<te-felhasználóneved>/devschool-platform.git
+cd devschool-platform
+```
+
+### 2. Lokális fejlesztői környezet felállítása
+
+```bash
+# Python virtuális környezet
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# .env fájl létrehozása
+cp .env.example .env
+
+# Tesztek futtatása
+pytest -v
+
+# Linter ellenőrzés
+ruff check . && ruff format --check .
+```
+
+### 3. Frontend fejlesztés
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 4. Docker-rel való futtatás
+
+```bash
+docker compose up --build -d
+curl http://localhost:8000/health
+```
+
+## Issue-k
+
+- Nézd meg a [meglévő issue-kat](../../issues), mielőtt újat nyitsz
+- Használd az issue template-eket (bug report / feature request)
+- A `good first issue` címkéjű issue-k ideálisak kezdőknek
+- Mielőtt nagyobb változtatásba kezdesz, nyiss egy issue-t és egyeztessünk
+
+## Branch stratégia
+
+```
+main ──────────────────── (éles, védett)
+  │
+  ├── develop ─────────── (staging)
+  │     │
+  │     ├── feature/...  (új funkció)
+  │     ├── fix/...      (hibajavítás)
+  │     └── docs/...     (dokumentáció)
+```
+
+### Branch elnevezés
+
+- `feature/<rövid-leírás>` — új funkció (pl. `feature/user-profile`)
+- `fix/<rövid-leírás>` — hibajavítás (pl. `fix/login-redirect`)
+- `docs/<rövid-leírás>` — dokumentáció (pl. `docs/api-guide`)
+
+## Commit üzenetek
+
+A [Conventional Commits](https://www.conventionalcommits.org/) konvenciót követjük:
+
+- `feat:` — új funkció
+- `fix:` — hibajavítás
+- `docs:` — dokumentáció
+- `test:` — tesztek
+- `refactor:` — refaktorálás
+- `chore:` — egyéb (CI, build, dependencies)
+
+Példa: `feat: add user profile page`
+
+## Pull Request küldése
+
+1. Hozz létre egy branch-et a `develop`-ból:
+   ```bash
+   git checkout develop
+   git pull origin develop
+   git checkout -b feature/az-en-funkciom
+   ```
+
+2. Végezd el a módosításokat, írd meg a teszteket
+
+3. Ellenőrizd, hogy minden rendben:
+   ```bash
+   pytest -v
+   ruff check . && ruff format --check .
+   ```
+
+4. Commitold és pushold:
+   ```bash
+   git add .
+   git commit -m "feat: rövid leírás"
+   git push origin feature/az-en-funkciom
+   ```
+
+5. Nyiss egy Pull Request-et a `develop` branch-be a GitHub-on
+
+### PR ellenőrzőlista
+
+- [ ] A tesztek zöldek (`pytest -v`)
+- [ ] A linter nem jelez hibát (`ruff check .`)
+- [ ] A kód dokumentált (ha szükséges)
+- [ ] A PR leírás tartalmazza a változtatás célját
+
+## Code review
+
+- Minden PR-hez legalább 1 reviewer jóváhagyása szükséges
+- A review-ra általában 1-2 munkanapon belül válaszolunk
+- Konstruktív visszajelzésre törekszünk — kérdéseket teszünk fel, nem kritizálunk
+
+## Kódstílus
+
+- **Python:** [ruff](https://docs.astral.sh/ruff/) linter és formatter, max. 120 karakter/sor
+- **Tesztek:** pytest, a tesztfájlok a `backend/tests/` mappában
+- **Típusannotáció:** ajánlott, de nem kötelező
+
+## Közösségi szerepkörök
+
+| Szerepkör | Elérés módja | Jogosultság |
+|-----------|-------------|-------------|
+| **Tanuló** | Beiratkozás egy kurzusra | Részvétel, issue nyitás |
+| **Kontribútor** | Legalább 1 elfogadott PR | Contributor címke |
+| **Mentor** | 5+ elfogadott PR + aktív code review | Code review jogosultság |
+| **Maintainer** | Meghívás a core csapattól | Write access, release |
+
+## Kérdésed van?
+
+Nyiss egy [issue-t](../../issues) vagy keress minket a Discord szerveren!
