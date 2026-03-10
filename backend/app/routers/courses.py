@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user, require_role
 from app.database import get_db
-from app.models.course import Course, Enrollment, Exercise, Module
+from app.models.course import Course, Enrollment, Exercise, Module, Progress, ProgressStatus
 from app.models.user import User, UserRole
 
 router = APIRouter(prefix="/api/courses", tags=["courses"])
@@ -26,6 +26,7 @@ class ModuleCreate(BaseModel):
 class ExerciseCreate(BaseModel):
     name: str
     repo_prefix: str = ""
+    classroom_url: str = ""
     order: int = 0
     required: bool = True
 
@@ -64,7 +65,7 @@ def get_course(course_id: int, db: Session = Depends(get_db)):
                 "name": m.name,
                 "order": m.order,
                 "exercises": [
-                    {"id": e.id, "name": e.name, "repo_prefix": e.repo_prefix, "order": e.order} for e in m.exercises
+                    {"id": e.id, "name": e.name, "repo_prefix": e.repo_prefix, "classroom_url": e.classroom_url or "", "order": e.order} for e in m.exercises
                 ],
             }
             for m in course.modules
@@ -132,7 +133,7 @@ def add_exercise(
     module = db.query(Module).filter(Module.id == module_id, Module.course_id == course_id).first()
     if not module:
         raise HTTPException(status_code=404, detail="Module not found")
-    exercise = Exercise(module_id=module_id, name=data.name, repo_prefix=data.repo_prefix, order=data.order, required=data.required)
+    exercise = Exercise(module_id=module_id, name=data.name, repo_prefix=data.repo_prefix, classroom_url=data.classroom_url, order=data.order, required=data.required)
     db.add(exercise)
     db.commit()
     db.refresh(exercise)
@@ -170,3 +171,55 @@ def unenroll(course_id: int, db: Session = Depends(get_db), current_user: User =
     db.delete(enrollment)
     db.commit()
     return {"detail": "Unenrolled successfully"}
+
+
+# --- Teacher / Admin endpoints ---
+
+
+@router.get("/{course_id}/students")
+def course_students(
+    course_id: int,
+    db: Session = Depends(get_db),
+    _teacher: User = Depends(require_role(UserRole.mentor)),
+):
+    """List all enrolled students with their progress (mentor/admin only)."""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    modules = db.query(Module).filter(Module.course_id == course_id).all()
+    module_ids = [m.id for m in modules]
+    total_exercises = db.query(Exercise).filter(Exercise.module_id.in_(module_ids)).count() if module_ids else 0
+
+    enrollments = db.query(Enrollment).filter(Enrollment.course_id == course_id).all()
+    result = []
+    for enrollment in enrollments:
+        user = db.query(User).filter(User.id == enrollment.user_id).first()
+        if not user:
+            continue
+
+        completed = (
+            db.query(Progress)
+            .filter(
+                Progress.user_id == user.id,
+                Progress.exercise_id.in_(db.query(Exercise.id).filter(Exercise.module_id.in_(module_ids))),
+                Progress.status == ProgressStatus.completed,
+            )
+            .count()
+            if module_ids
+            else 0
+        )
+
+        result.append(
+            {
+                "user_id": user.id,
+                "username": user.username,
+                "avatar_url": user.avatar_url,
+                "total_exercises": total_exercises,
+                "completed_exercises": completed,
+                "progress_percent": round(completed / total_exercises * 100, 1) if total_exercises > 0 else 0,
+                "enrolled_at": enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else None,
+            }
+        )
+
+    return {"course_name": course.name, "students": result}

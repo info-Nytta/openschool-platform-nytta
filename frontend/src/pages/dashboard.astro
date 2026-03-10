@@ -4,6 +4,8 @@ import Layout from '../layouts/Layout.astro';
 <Layout title="Dashboard">
   <div class="container page">
     <h1>Dashboard</h1>
+    <button id="sync-btn" class="btn btn-secondary" style="margin-bottom:20px;">🔄 Haladás szinkronizálása GitHub-ból</button>
+    <div id="sync-msg"></div>
     <div id="dashboard-content">
       <p>Betöltés...</p>
     </div>
@@ -93,6 +95,33 @@ import Layout from '../layouts/Layout.astro';
       }
     }
     loadDashboard();
+
+    // Sync progress from GitHub
+    document.getElementById('sync-btn')?.addEventListener('click', async () => {
+      const token = localStorage.getItem('access_token');
+      if (!token) { window.location.href = '/login'; return; }
+      const btn = document.getElementById('sync-btn');
+      const msg = document.getElementById('sync-msg');
+      if (btn) btn.disabled = true;
+      if (btn) btn.textContent = '⏳ Szinkronizálás...';
+      try {
+        const r = await fetch('/api/me/sync-progress', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (r.ok) {
+          if (msg) msg.innerHTML = '<p style="color:green;">Haladás frissítve!</p>';
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          const d = await r.json();
+          if (msg) msg.innerHTML = `<p style="color:red;">${d.detail || 'Hiba történt.'}</p>`;
+        }
+      } catch {
+        if (msg) msg.innerHTML = '<p style="color:red;">Hiba történt a szinkronizálás során.</p>';
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🔄 Haladás szinkronizálása GitHub-ból'; }
+      }
+    });
   </script>
 </Layout>
 

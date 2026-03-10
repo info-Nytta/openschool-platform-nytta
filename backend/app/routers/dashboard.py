@@ -5,9 +5,11 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
+from app.config import settings
 from app.database import get_db
 from app.models.course import Course, Enrollment, Exercise, Module, Progress, ProgressStatus
 from app.models.user import User
+from app.services.progress import update_progress_for_user
 
 router = APIRouter(prefix="/api/me", tags=["me"])
 
@@ -142,3 +144,15 @@ def update_exercise_progress(
 
     db.commit()
     return {"status": "ok", "exercise_id": data.exercise_id, "progress": status_value.value}
+
+
+@router.post("/sync-progress")
+async def sync_progress(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Sync progress from GitHub CI status for all enrolled exercises."""
+    if not current_user.github_token:
+        raise HTTPException(status_code=400, detail="Nincs GitHub token — jelentkezz be újra")
+
+    owner = settings.github_org or current_user.username
+    await update_progress_for_user(db, current_user, current_user.github_token, owner)
+
+    return my_courses(db=db, current_user=current_user)

@@ -23,3 +23,4 @@ class User(Base):
     role = Column(Enum(UserRole), default=UserRole.student, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     last_login = Column(DateTime)
+    github_token = Column(String)

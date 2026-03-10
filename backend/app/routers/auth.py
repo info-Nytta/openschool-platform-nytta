@@ -60,6 +60,7 @@ def auth_callback(code: str, db: Session = Depends(get_db), response: Response =
         user.username = github_user.get("login", user.username)
         user.avatar_url = github_user.get("avatar_url", user.avatar_url)
         user.email = github_user.get("email", user.email)
+        user.github_token = token_data["access_token"]
     else:
         user = User(
             github_id=github_user["id"],
@@ -67,6 +68,7 @@ def auth_callback(code: str, db: Session = Depends(get_db), response: Response =
             email=github_user.get("email"),
             avatar_url=github_user.get("avatar_url"),
             last_login=datetime.now(timezone.utc),
+            github_token=token_data["access_token"],
         )
         db.add(user)
 

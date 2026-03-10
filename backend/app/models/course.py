@@ -38,6 +38,7 @@ class Exercise(Base):
     module_id = Column(Integer, ForeignKey("modules.id"), nullable=False)
     name = Column(String, nullable=False)
     repo_prefix = Column(String)
+    classroom_url = Column(String)
     order = Column(Integer, default=0)
     required = Column(Boolean, default=True, nullable=False)
 
