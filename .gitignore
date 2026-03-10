@@ -20,6 +20,9 @@ env/
 # Docker
 pgdata/
 
+# Generated data
+backend/data/
+
 # IDE
 .idea/
 .vscode/

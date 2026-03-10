@@ -11,6 +11,16 @@ import Layout from '../layouts/Layout.astro';
       </a>
     </div>
   </div>
+
+  <script>
+    // Check if we got a token from the OAuth callback redirect
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      localStorage.setItem('access_token', token);
+      window.location.href = '/dashboard';
+    }
+  </script>
 </Layout>
 
 <style>

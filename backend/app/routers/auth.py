@@ -77,8 +77,9 @@ def auth_callback(code: str, db: Session = Depends(get_db), response: Response =
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
 
-    resp = Response(content='{"access_token": "' + access_token + '", "token_type": "bearer"}')
-    resp.headers["Content-Type"] = "application/json"
+    # Redirect to frontend with token in URL fragment (not sent to server)
+    redirect_url = f"/login?token={access_token}"
+    resp = RedirectResponse(url=redirect_url, status_code=302)
     resp.set_cookie(
         key="refresh_token",
         value=refresh_token,

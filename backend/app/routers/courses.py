@@ -27,6 +27,7 @@ class ExerciseCreate(BaseModel):
     name: str
     repo_prefix: str = ""
     order: int = 0
+    required: bool = True
 
 
 # --- Public endpoints ---
@@ -131,7 +132,7 @@ def add_exercise(
     module = db.query(Module).filter(Module.id == module_id, Module.course_id == course_id).first()
     if not module:
         raise HTTPException(status_code=404, detail="Module not found")
-    exercise = Exercise(module_id=module_id, name=data.name, repo_prefix=data.repo_prefix, order=data.order)
+    exercise = Exercise(module_id=module_id, name=data.name, repo_prefix=data.repo_prefix, order=data.order, required=data.required)
     db.add(exercise)
     db.commit()
     db.refresh(exercise)
