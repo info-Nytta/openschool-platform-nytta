@@ -56,7 +56,7 @@ import Layout from '../layouts/Layout.astro';
 
           let certHtml = '';
           if (cert) {
-            certHtml = `<a href="/api/me/certificates/${cert.cert_id}/pdf" class="btn btn-secondary" style="margin-top:8px;">PDF letöltése</a>`;
+            certHtml = `<button class="btn btn-secondary download-cert" data-cert-id="${cert.cert_id}" style="margin-top:8px;">PDF letöltése</button>`;
           } else if (isComplete) {
             certHtml = `<button class="btn btn-primary request-cert" data-course-id="${c.course_id}" style="margin-top:8px;">Tanúsítvány igénylése</button>`;
           }
@@ -74,6 +74,24 @@ import Layout from '../layouts/Layout.astro';
             </div>
           `;
         }).join('');
+
+        document.querySelectorAll('.download-cert').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const certId = (e.target).dataset.certId;
+            const r = await fetch(`/api/me/certificates/${certId}/pdf`, { headers });
+            if (r.ok) {
+              const blob = await r.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `certificate-${certId}.pdf`;
+              a.click();
+              URL.revokeObjectURL(url);
+            } else {
+              alert('Nem sikerült letölteni a PDF-et.');
+            }
+          });
+        });
 
         document.querySelectorAll('.request-cert').forEach(btn => {
           btn.addEventListener('click', async (e) => {
