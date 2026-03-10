@@ -6,7 +6,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
-from app.auth.jwt import create_access_token, create_refresh_token, verify_token
+from app.auth.jwt import create_access_token, create_refresh_token
 from app.config import settings
 from app.database import get_db
 from app.models.user import User
@@ -105,7 +105,6 @@ def auth_me(current_user: User = Depends(get_current_user)):
 @router.post("/refresh")
 def auth_refresh(db: Session = Depends(get_db), response: Response = None):
     """Issue a new access token using the refresh token cookie."""
-    from fastapi import Cookie
 
     # This is a simplified version - in production, read from cookie
     raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Use cookie-based refresh")

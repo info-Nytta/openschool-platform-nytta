@@ -141,7 +141,6 @@ def test_existing_user_login_updates_last_login(client, db_session, test_user):
 
 
 def test_admin_endpoint_with_student_token(client, test_user):
-    token = create_access_token(test_user.id)
     # /api/auth/me is not role-protected, so we test the dependency directly
     from app.auth.dependencies import require_role
 
