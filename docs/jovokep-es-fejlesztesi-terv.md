@@ -173,10 +173,9 @@ A kurzuskeretrendszer Discord szervert használ a kommunikációhoz, heti szála
 ### 🟠 2. fázis — Tanári eszközök
 
 - [ ] Tanári dashboard: összes diák haladása egy helyen
-- [ ] Jegykalkulátor integráció (jelenleg CLI szkript: `jegy-szamolo.py`)
 - [ ] GitHub Classroom eredmények megjelenítése
 - [ ] Házi feladatok határidejének kezelése
-- [ ] Exportálás: jegyek CSV-be
+- [ ] Exportálás: haladás CSV-be
 
 ### 🟠 3. fázis — Haladó funkciók
 
@@ -206,7 +205,6 @@ A platform fejlesztése során a következő külső eszközök integrálása te
 |--------|--------|--------|
 | GitHub Classroom | Feladatkiadás és autograding | ✅ Webhook + repo_prefix + sync |
 | Discord értesítések | Platform → Discord értesítések küldése | 🔴 Tervezett |
-| Jegykalkulátor | Félév végi jegy kiszámítása | 🟠 Tervezett |
 
 ---
 
@@ -214,7 +212,7 @@ A platform fejlesztése során a következő külső eszközök integrálása te
 
 1. **VPS telepítés** (az éles rendszer felállítása a saját domainnel) ← **KÖVETKEZŐ LÉPÉS**
 2. **Discord integráció** — a közösségi kommunikáció
-3. **Tanári eszközök** — jegykalkulátor, haladás összeszítés, automatikus assignment szinkronizálás
+3. **Tanári eszközök** — haladás összeszítés, automatikus assignment szinkronizálás
 4. **Haladó funkciók** — PR-ek, Issues, csapatmunka
 5. **Platform érettség** — monitoring, analitika, teljesítmény
 
@@ -224,4 +222,4 @@ A platform fejlesztése során a következő külső eszközök integrálása te
 
 A platform alapjai **készen állnak**: backend API (auth, kurzusok, haladás, tanúsítványok, admin), frontend (9 oldal), infrastruktúra (Docker, CI/CD, nginx), GitHub Classroom integráció (repo_prefix, webhook, sync), admin panel, és 7 dokumentum navigációval összekötve.
 
-A következő nagy lépés a **VPS telepítés**, majd a **Discord integráció** és **tanári eszközök bővítése** (automatikus Classroom szinkronizálás, jegykalkulátor), amelyek a platform valódi értékét tovább növelik.
+A következő nagy lépés a **VPS telepítés**, majd a **Discord integráció** és **tanári eszközök bővítése** (automatikus Classroom szinkronizálás, tanári dashboard), amelyek a platform valódi értékét tovább növelik.
