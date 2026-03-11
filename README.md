@@ -36,22 +36,7 @@ docker compose up --build -d
 curl http://localhost:8000/health
 ```
 
-### Makefile parancsok
-
-```bash
-make dev-setup  # Teljes fejlesztői környezet felállítása
-make up         # Docker Compose indítás
-make down       # Docker Compose leállítás
-make test       # Tesztek futtatása
-make migrate    # Alembic migrációk futtatása
-make lint       # Ruff linter és formatter ellenőrzés
-make format     # Kód formázása
-make logs       # Docker logok követése
-make clean      # Ideiglenes fájlok törlése
-make changelog  # CHANGELOG.md generálása
-```
-
-A karbantartási parancsokért lásd: [Automatizálás](docs/operations/automatizalas-beallitas.md)
+Lokális fejlesztéshez lásd: [Fejlesztői útmutató](docs/development/fejlesztoi-utmutato.md)
 
 ## Hozzájárulás
 
