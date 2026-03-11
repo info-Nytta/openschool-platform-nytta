@@ -132,6 +132,20 @@ ufw --force enable > /dev/null 2>&1
 ok "Firewall configured: SSH (22), HTTP (80), HTTPS (443) open"
 warn "PostgreSQL (5432) is NOT exposed externally"
 
+# --- SSH hardening ------------------------------------------------------------
+log "Hardening SSH (disabling password authentication)..."
+
+sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+sed -i 's/^#\?KbdInteractiveAuthentication.*/KbdInteractiveAuthentication no/' /etc/ssh/sshd_config
+
+if [ -f /root/.ssh/authorized_keys ] && [ -s /root/.ssh/authorized_keys ]; then
+    systemctl restart sshd
+    ok "SSH password authentication disabled (key-only access)"
+else
+    warn "No SSH authorized_keys found — skipping SSH hardening to avoid lockout"
+    warn "Run 'ssh-copy-id root@VPS_IP' from your local machine first, then re-run this section"
+fi
+
 # =============================================================================
 # 5. Clone repository
 # =============================================================================

@@ -17,10 +17,12 @@ Ez az útmutató a helyi fejlesztést, a staging és az éles (production) üzem
 7. [Tesztek futtatása](#tesztek-futtatása)
 8. [Staging telepítés](#staging-telepítés)
 9. [Éles telepítés (VPS)](#éles-telepítés-vps)
-10. [SSL/TLS Let's Encrypt-tel](#ssltls-lets-encrypttel)
-11. [Biztonsági mentés](#biztonsági-mentés)
-12. [CI/CD Pipeline](#cicd-pipeline)
-13. [Hibaelhárítás](#hibaelhárítás)
+10. [SSH biztonság](#ssh-biztonság)
+11. [DNS és Cloudflare konfiguráció](#dns-és-cloudflare-konfiguráció)
+12. [SSL/TLS Let's Encrypt-tel](#ssltls-lets-encrypttel)
+13. [Biztonsági mentés](#biztonsági-mentés)
+14. [CI/CD Pipeline](#cicd-pipeline)
+15. [Hibaelhárítás](#hibaelhárítás)
 
 ---
 
@@ -501,6 +503,93 @@ SQL
 
 ---
 
+## SSH biztonság
+
+Az éles szerveren az SSH jelszavas bejelentkezést **ki kell kapcsolni** — csak kulcs alapú hitelesítés engedélyezett. Ez megakadályozza a brute-force támadásokat.
+
+### 1. SSH kulcs másolása a VPS-re
+
+Ha még nincs SSH kulcsod, generálj egyet a helyi gépen:
+
+```bash
+# Kulcs generálása (ha még nincs)
+ssh-keygen -t ed25519 -C "your_email@example.com"
+
+# Kulcs másolása a VPS-re (jelszóval kell bejelentkezni ehhez utoljára)
+ssh-copy-id root@VPS_IP
+```
+
+### 2. Jelszavas bejelentkezés letiltása
+
+Miután a kulcs alapú bejelentkezés működik, tiltsd le a jelszavas hozzáférést:
+
+```bash
+ssh root@VPS_IP
+
+# sshd_config módosítása
+sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+sed -i 's/^#\?KbdInteractiveAuthentication.*/KbdInteractiveAuthentication no/' /etc/ssh/sshd_config
+
+# SSH szolgáltatás újraindítása
+systemctl restart sshd
+```
+
+### 3. Ellenőrzés
+
+```bash
+# Egy másik terminálból próbálj meg jelszóval belépni — el kell utasítania
+ssh -o PubkeyAuthentication=no root@VPS_IP
+# → Permission denied (publickey).
+```
+
+> ⚠️ **Fontos:** Ne zárd be az aktuális SSH munkamenetet, amíg nem ellenőrizted, hogy a kulcs alapú bejelentkezés működik egy másik terminálból! Ha elrontod, kizárhatod magad a szerverről.
+
+---
+
+## DNS és Cloudflare konfiguráció
+
+Ha Cloudflare-t használsz DNS szolgáltatóként és CDN/DDoS védelemként:
+
+### 1. DNS rekord beállítása
+
+Cloudflare Dashboard → DNS → Records:
+
+| Típus | Név | Tartalom | Proxy |
+|-------|-----|----------|-------|
+| A | `@` (vagy `yourdomain.com`) | `VPS_IP_CÍM` | Proxied (narancssárga felhő) |
+
+### 2. SSL/TLS mód
+
+Cloudflare Dashboard → SSL/TLS → Overview:
+
+- **Full (Strict)** — ez az ajánlott beállítás
+- Ez megköveteli, hogy az origin szerveren (VPS) érvényes SSL tanúsítvány legyen (Let's Encrypt)
+- Cloudflare HTTPS-sel csatlakozik a VPS-hez, a látogatók is HTTPS-t kapnak
+
+> ⚠️ **Ne használj "Flexible" módot** éles környezetben! Flexible módban a Cloudflare és a VPS közötti forgalom titkosítatlan HTTP — ez biztonsági kockázat.
+
+### 3. SSL/TLS módok összehasonlítása
+
+| Mód | Cloudflare → Origin | Tanúsítvány kell? | Biztonság |
+|-----|---------------------|-------------------|----------|
+| Off | HTTP | Nem | ❌ Nincs titkosítás |
+| Flexible | HTTP | Nem | ⚠️ Félig titkosított |
+| Full | HTTPS | Bármilyen (self-signed is) | ✅ Titkosított |
+| **Full (Strict)** | **HTTPS** | **Érvényes (Let's Encrypt)** | **✅✅ Ajánlott** |
+
+### 4. SSL tanúsítvány igénylés Cloudflare mögül
+
+A Let's Encrypt certbot standalone módja **nem működik** aktív Cloudflare proxyval, mert a Cloudflare elkapja a HTTP kéréseket. A megoldás:
+
+1. **Ideiglenesen kapcsold ki** a Cloudflare proxyt (narancssárga felhő → szürke felhő / "DNS only")
+2. Futtasd a certbot-ot (lásd [SSL/TLS Let's Encrypt-tel](#ssltls-lets-encrypttel))
+3. **Kapcsold vissza** a Cloudflare proxyt (szürke → narancssárga felhő)
+4. Állítsd az SSL módot **Full (Strict)**-re
+
+> **Megjegyzés:** A tanúsítvány megújításkor is ideiglenesen ki kell kapcsolni a Cloudflare proxyt, vagy használj DNS-01 challenge-t (lásd alább az automatikus megújításnál).
+
+---
+
 ## SSL/TLS Let's Encrypt-tel
 
 ### A) Certbot standalone (legegyszerűbb)
@@ -561,6 +650,24 @@ sudo certbot renew --dry-run
 # Cron job hozzáadása az automatikus megújításhoz
 echo "0 3 * * * certbot renew --quiet && docker compose -f /opt/openschool/docker-compose.prod.yml restart nginx" | sudo tee /etc/cron.d/certbot-renew
 ```
+
+> **Cloudflare használata esetén:** A standalone megújításhoz az nginx-t le kell állítani és a Cloudflare proxyt ideiglenesen ki kell kapcsolni. Alternatívaként a `certbot` DNS-01 challenge pluginja (pl. `certbot-dns-cloudflare`) képes megújítani a tanúsítványt a Cloudflare proxy kikapcsolása nélkül:
+>
+> ```bash
+> # Cloudflare DNS plugin telepítése
+> apt-get install python3-certbot-dns-cloudflare
+>
+> # API token fájl létrehozása (Cloudflare Dashboard → API Tokens → Edit zone DNS)
+> cat > /etc/letsencrypt/cloudflare.ini << EOF
+> dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN
+> EOF
+> chmod 600 /etc/letsencrypt/cloudflare.ini
+>
+> # Tanúsítvány igénylése DNS-01 challenge-sel (proxy maradhat bekapcsolva)
+> certbot certonly --dns-cloudflare \
+>   --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini \
+>   -d yourdomain.com
+> ```
 
 ---
 
@@ -706,3 +813,5 @@ Manuális ellenőrzőlista:
 | Backup | Napi `pg_dump` cron job beállítva |
 | Tűzfal | Csak 80/443 port nyitva kívülről, PostgreSQL (5432) nem elérhető |
 | DNS | A domain A rekord a VPS IP-re mutat |
+| SSH | Jelszavas bejelentkezés letiltva, csak kulcs alapú hitelesítés |
+| Cloudflare SSL | Full (Strict) mód beállítva (ha Cloudflare-t használsz) |

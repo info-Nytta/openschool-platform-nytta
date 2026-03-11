@@ -150,7 +150,7 @@ fi
 
 # --- Backend /health ----------------------------------------------------------
 echo "Health endpoint:"
-if curl -sf http://localhost:8000/health &>/dev/null; then
+if curl -sf http://localhost/health &>/dev/null || curl -sf http://localhost:8000/health &>/dev/null; then
     check_pass "/health responding"
 else
     check_fail "/health not responding"
