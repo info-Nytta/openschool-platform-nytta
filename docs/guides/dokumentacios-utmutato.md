@@ -187,7 +187,9 @@ Amikor új végpontot adsz hozzá, frissítsd az [API referenciát](../reference
 docs/
 ├── getting-started/
 │   ├── architektura.md             # Rendszer architektúra, adatmodell
-│   ├── telepitesi-utmutato.md      # Telepítés (lokális, staging, éles)
+│   ├── telepitesi-utmutato.md      # Helyi fejlesztés (Docker, Python, Astro)
+│   ├── eles-telepites.md           # Éles telepítés (VPS, SSH, DNS, SSL, CI/CD)
+│   ├── staging-telepites.md        # Staging környezet beüzemelése
 │   └── kornyezeti-valtozok.md      # Környezeti változók referencia
 ├── development/
 │   ├── fejlesztoi-utmutato.md      # Közös fejlesztői útmutató (Docker, CI/CD, stb.)
@@ -214,7 +216,9 @@ docs/
 | Kérdés | Dokumentum |
 |--------|-----------|
 | Hogyan fut az alkalmazás? Mi kommunikál mivel? | `getting-started/architektura.md` |
-| Hogyan telepítem lokálisan / VPS-en? | `getting-started/telepitesi-utmutato.md` |
+| Hogyan telepítem lokálisan? | `getting-started/telepitesi-utmutato.md` |
+| Hogyan telepítem VPS-re (éles)? | `getting-started/eles-telepites.md` |
+| Hogyan állítom be a staging-et? | `getting-started/staging-telepites.md` |
 | Hogyan írok backend kódot? | `development/backend-fejlesztes.md` |
 | Hogyan írok frontend kódot? | `development/frontend-fejlesztes.md` |
 | Docker, VS Code, Makefile, CI/CD kérdések? | `development/fejlesztoi-utmutato.md` |

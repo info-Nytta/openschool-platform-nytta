@@ -49,7 +49,9 @@ Szívesen fogadjuk a hozzájárulásokat! Olvasd el a [CONTRIBUTING.md](CONTRIBU
 | Dokumentum | Leírás |
 |---|---|
 | [Architektúra](docs/getting-started/architektura.md) | Rendszer felépítés, adatmodell, auth folyamat |
-| [Telepítési útmutató](docs/getting-started/telepitesi-utmutato.md) | Helyi fejlesztés, staging, VPS telepítés |
+| [Telepítési útmutató](docs/getting-started/telepitesi-utmutato.md) | Helyi fejlesztés (Docker, Python, Astro) |
+| [Éles telepítés](docs/getting-started/eles-telepites.md) | VPS, SSH, DNS, SSL, CI/CD, hibaelhárítás |
+| [Staging telepítés](docs/getting-started/staging-telepites.md) | Staging környezet beüzemelése |
 | [Környezeti változók](docs/getting-started/kornyezeti-valtozok.md) | Env var referencia, Docker, GitHub Actions secrets |
 
 ### 🛠️ Fejlesztés
