@@ -387,7 +387,39 @@ A staging elsődleges célja az adatbázis migrációk tesztelése éles deploy 
 
 ## Éles telepítés (VPS)
 
-### 1. Szerver előkészítése
+### Automatizált telepítés (ajánlott)
+
+A teljes VPS beállítás automatizálható egyetlen szkripttel:
+
+```bash
+# SSH belépés a VPS-re
+ssh root@your-vps-ip
+
+# Automatizált bootstrap futtatása — végigvezet minden lépésen:
+# Docker, tűzfal, repo klónozás, .env.prod generálás, SSL, seed data, cron
+curl -fsSL https://raw.githubusercontent.com/ghemrich/openschool-platform/main/scripts/bootstrap-vps.sh -o bootstrap-vps.sh
+bash bootstrap-vps.sh
+```
+
+A szkript interaktívan kérdezi a domain-t, GitHub OAuth adatokat, és automatikusan:
+- Telepíti a Dockert + tűzfalat (UFW: 22, 80, 443 nyitva)
+- Létrehozza a deploy usert és a projekt könyvtárat
+- Klónozza a repót és erős jelszavakkal generálja a `.env.prod`-ot
+- Elindítja a szolgáltatásokat és futtatja a migrációkat
+- Beállítja a Let's Encrypt SSL-t
+- Telepíti a karbantartási cron job-okat (`provision.sh`)
+
+A bootstrap után futtasd a biztonsági ellenőrzést:
+
+```bash
+./scripts/security-check.sh
+```
+
+> A telepítés részleteit lásd alább, ha manuálisan szeretnéd elvégezni.
+
+### Manuális telepítés
+
+#### 1. Szerver előkészítése
 
 ```bash
 # SSH belépés a VPS-re
@@ -652,7 +684,15 @@ docker compose restart nginx
 
 ## Éles rendszer biztonsági ellenőrzőlista
 
-Mielőtt a platformot éles forgalomba engeded, ellenőrizd:
+A biztonsági ellenőrzőlista futtatható automatikusan is:
+
+```bash
+./scripts/security-check.sh
+```
+
+Ez ellenőrzi a SECRET_KEY erősségét, ENVIRONMENT beállítást, CORS konfigurációt, DB jelszót, .env.prod jogosultságokat, HTTPS-t, tűzfalat, konténer állapotot, Swagger UI elérhetőségét, mentések frissességét és cron job-okat.
+
+Manuális ellenőrzőlista:
 
 | Elem | Ellenőrzés |
 |------|------------|

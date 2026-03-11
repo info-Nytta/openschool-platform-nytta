@@ -63,3 +63,6 @@ maintenance-monthly:
 
 install-cron:
 	sudo ./scripts/setup-cron.sh
+
+security-check:
+	./scripts/security-check.sh
