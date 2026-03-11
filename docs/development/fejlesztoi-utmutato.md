@@ -444,8 +444,7 @@ alembic revision --autogenerate -m "add user profile fields"
 
 # 8. Dokumentáció frissítése
 #    → docstring-ek az új függvényekhez
-#    → README.md API tábla frissítése (ha új végpont)
-#    → docs/ releváns fájlok frissítése
+#    → docs/ releváns fájlok frissítése (api-referencia.md, stb.)
 #    Lásd: docs/guides/dokumentacios-utmutato.md
 
 # 9. Ellenőrzés

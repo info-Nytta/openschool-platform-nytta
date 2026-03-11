@@ -27,7 +27,7 @@ Ez az útmutató leírja, hogyan kell dokumentálni a kódot és a projektet. Mi
 
 | Változtatás típusa | Szükséges dokumentáció |
 |---------------------|------------------------|
-| Új API végpont | Docstring + api-referencia.md + README API tábla |
+| Új API végpont | Docstring + api-referencia.md |
 | Új oldal (frontend) | frontend-fejlesztes.md oldalak szekció |
 | Új modell/tábla | Docstring + adatbazis-sema.md |
 | Konfiguráció változás | `.env.example` + kornyezeti-valtozok.md |
@@ -167,9 +167,9 @@ async def get_course(course_id: int, db: Session = Depends(get_db)):
     """
 ```
 
-### README API tábla
+### API referencia frissítése
 
-Amikor új végpontot adsz hozzá, frissítsd a `README.md` API végpontok táblázatát is:
+Amikor új végpontot adsz hozzá, frissítsd az [API referenciát](../reference/api-referencia.md):
 
 ```markdown
 | Metódus | Útvonal | Leírás |
@@ -361,7 +361,6 @@ A `README.md` a projekt belépési pontja. Tartalmazza:
 
 | Változás | README szekció |
 |----------|----------------|
-| Új API végpont | API végpontok tábla |
 | Új Makefile target | Makefile parancsok tábla |
 | Új dokumentum a `docs/`-ban | Dokumentáció tábla |
 | Új technológia a stackben | Technológiai verem |
@@ -373,8 +372,7 @@ A `README.md` a projekt belépési pontja. Tartalmazza:
 Mentsd el ezt a listát, és futtasd végig minden PR előtt:
 
 - [ ] Új publikus függvényeknek van docstring-jük?
-- [ ] Új API végpont megjelenik a Swagger-ben (docstring + summary)?
-- [ ] A `README.md` API táblázata frissítve van?
+- [ ] Új API végpont megjelenik a Swagger-ben (docstring + summary) és az api-referencia.md-ban?
 - [ ] A `docs/` mappában az érintett dokumentumok frissítve vannak?
 - [ ] Ha új dokumentum született, az összes navigációs sáv frissítve van?
 - [ ] A `.env.example` tartalmazza az új környezeti változókat?
