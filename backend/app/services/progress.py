@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
@@ -55,11 +55,11 @@ async def update_progress_for_user(db: Session, user: User, github_token: str, o
                         exercise_id=exercise.id,
                         github_repo=repo_name,
                         status=ProgressStatus.completed if is_completed else ProgressStatus.not_started,
-                        completed_at=datetime.now(timezone.utc) if is_completed else None,
+                        completed_at=datetime.now(UTC) if is_completed else None,
                     )
                     db.add(progress)
                 elif is_completed and progress.status != ProgressStatus.completed:
                     progress.status = ProgressStatus.completed
-                    progress.completed_at = datetime.now(timezone.utc)
+                    progress.completed_at = datetime.now(UTC)
 
     db.commit()

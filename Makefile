@@ -1,4 +1,4 @@
-.PHONY: up down test migrate lint format install-hooks dev-setup
+.PHONY: up down test migrate lint format install-hooks dev-setup clean logs changelog
 
 up:
 	docker compose up --build -d
@@ -30,3 +30,17 @@ dev-setup:
 	cp -n .env.example .env || true
 	cd frontend && npm install
 	@echo "✅ Fejlesztői környezet kész!"
+
+clean:
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
+	find . -name '*.pyc' -delete 2>/dev/null || true
+	rm -f *.db
+	@echo "✅ Tisztítás kész!"
+
+logs:
+	docker compose logs -f --tail=100
+
+changelog:
+	git-cliff -o CHANGELOG.md
+	@echo "✅ CHANGELOG.md frissítve!"

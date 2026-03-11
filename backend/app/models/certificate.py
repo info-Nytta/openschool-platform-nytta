@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 
@@ -14,5 +14,5 @@ class Certificate(Base):
     cert_id = Column(String, unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
-    issued_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    issued_at = Column(DateTime, default=lambda: datetime.now(UTC))
     pdf_path = Column(String)

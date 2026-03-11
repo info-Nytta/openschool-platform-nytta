@@ -3,7 +3,11 @@ target-version = "py312"
 line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "W"]
+select = ["E", "F", "I", "N", "W", "B", "UP", "A", "C4", "SIM", "TCH"]
+ignore = ["B008"]  # Depends() in defaults is standard FastAPI pattern
+
+[tool.ruff.lint.per-file-ignores]
+"backend/alembic/versions/*.py" = ["UP007", "UP035"]  # Alembic auto-generated code
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

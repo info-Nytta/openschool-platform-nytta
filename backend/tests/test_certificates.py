@@ -119,13 +119,15 @@ def test_request_certificate_incomplete_course(client, student, incomplete_cours
 
 def test_request_certificate_success(client, student, completed_course, tmp_path):
     token = create_access_token(student.id)
-    with patch("app.services.pdf.generate_certificate_pdf", return_value=b"%PDF-fake"):
-        with patch("app.services.qr.generate_qr_base64", return_value="fakebase64"):
-            with patch("app.routers.certificates.CERT_DIR", tmp_path):
-                response = client.post(
-                    f"/api/me/courses/{completed_course.id}/certificate",
-                    headers={"Authorization": f"Bearer {token}"},
-                )
+    with (
+        patch("app.services.pdf.generate_certificate_pdf", return_value=b"%PDF-fake"),
+        patch("app.services.qr.generate_qr_base64", return_value="fakebase64"),
+        patch("app.routers.certificates.CERT_DIR", tmp_path),
+    ):
+        response = client.post(
+            f"/api/me/courses/{completed_course.id}/certificate",
+            headers={"Authorization": f"Bearer {token}"},
+        )
     assert response.status_code == 201
     data = response.json()
     assert "cert_id" in data
@@ -133,17 +135,19 @@ def test_request_certificate_success(client, student, completed_course, tmp_path
 
 def test_request_certificate_duplicate(client, db_session, student, completed_course, tmp_path):
     token = create_access_token(student.id)
-    with patch("app.services.pdf.generate_certificate_pdf", return_value=b"%PDF-fake"):
-        with patch("app.services.qr.generate_qr_base64", return_value="fakebase64"):
-            with patch("app.routers.certificates.CERT_DIR", tmp_path):
-                client.post(
-                    f"/api/me/courses/{completed_course.id}/certificate",
-                    headers={"Authorization": f"Bearer {token}"},
-                )
-                response = client.post(
-                    f"/api/me/courses/{completed_course.id}/certificate",
-                    headers={"Authorization": f"Bearer {token}"},
-                )
+    with (
+        patch("app.services.pdf.generate_certificate_pdf", return_value=b"%PDF-fake"),
+        patch("app.services.qr.generate_qr_base64", return_value="fakebase64"),
+        patch("app.routers.certificates.CERT_DIR", tmp_path),
+    ):
+        client.post(
+            f"/api/me/courses/{completed_course.id}/certificate",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response = client.post(
+            f"/api/me/courses/{completed_course.id}/certificate",
+            headers={"Authorization": f"Bearer {token}"},
+        )
     assert response.status_code == 409
 
 

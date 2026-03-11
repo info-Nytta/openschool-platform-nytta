@@ -55,9 +55,11 @@ def test_callback_with_valid_code(client, db_session):
         "avatar_url": "https://avatars.example.com/67890",
     }
 
-    with patch("app.routers.auth.httpx.post", return_value=mock_token_response):
-        with patch("app.routers.auth.httpx.get", return_value=mock_user_response):
-            response = client.get("/api/auth/callback?code=valid_code", follow_redirects=False)
+    with (
+        patch("app.routers.auth.httpx.post", return_value=mock_token_response),
+        patch("app.routers.auth.httpx.get", return_value=mock_user_response),
+    ):
+        response = client.get("/api/auth/callback?code=valid_code", follow_redirects=False)
 
     assert response.status_code == 302
     assert "/login#token=" in response.headers["location"]
@@ -89,9 +91,11 @@ def test_existing_user_login_updates_last_login(client, db_session, test_user):
         "avatar_url": "https://avatars.example.com/12345",
     }
 
-    with patch("app.routers.auth.httpx.post", return_value=mock_token_response):
-        with patch("app.routers.auth.httpx.get", return_value=mock_user_response):
-            response = client.get("/api/auth/callback?code=valid_code", follow_redirects=False)
+    with (
+        patch("app.routers.auth.httpx.post", return_value=mock_token_response),
+        patch("app.routers.auth.httpx.get", return_value=mock_user_response),
+    ):
+        response = client.get("/api/auth/callback?code=valid_code", follow_redirects=False)
 
     assert response.status_code == 302
     assert "/login#token=" in response.headers["location"]

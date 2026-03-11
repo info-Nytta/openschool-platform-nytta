@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import logging
+from datetime import UTC
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy.orm import Session
@@ -38,15 +39,16 @@ async def github_webhook(
     body = await request.body()
 
     # Verify signature if webhook secret is configured
-    if settings.github_webhook_secret:
-        if not _verify_signature(body, x_hub_signature_256, settings.github_webhook_secret):
-            raise HTTPException(status_code=403, detail="Invalid signature")
+    if settings.github_webhook_secret and not _verify_signature(
+        body, x_hub_signature_256, settings.github_webhook_secret
+    ):
+        raise HTTPException(status_code=403, detail="Invalid signature")
 
     if x_github_event != "workflow_run":
         return {"status": "ignored", "event": x_github_event}
 
     import json
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     payload = json.loads(body)
 
@@ -88,13 +90,13 @@ async def github_webhook(
                 exercise_id=exercise.id,
                 github_repo=repo_name,
                 status=ProgressStatus.completed,
-                completed_at=datetime.now(timezone.utc),
+                completed_at=datetime.now(UTC),
             )
             db.add(progress)
             matched = True
         elif progress.status != ProgressStatus.completed:
             progress.status = ProgressStatus.completed
-            progress.completed_at = datetime.now(timezone.utc)
+            progress.completed_at = datetime.now(UTC)
             matched = True
 
     if matched:
@@ -103,6 +105,6 @@ async def github_webhook(
         except Exception:
             db.rollback()
             logger.exception("Failed to commit webhook progress update for repo=%s", repo_name)
-            raise HTTPException(status_code=500, detail="Failed to update progress")
+            raise HTTPException(status_code=500, detail="Failed to update progress") from None
 
     return {"status": "processed", "repo": repo_name, "updated": matched}

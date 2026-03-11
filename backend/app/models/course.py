@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
@@ -13,7 +13,7 @@ class Course(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     description = Column(Text)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
     modules = relationship("Module", back_populates="course", order_by="Module.order")
     enrollments = relationship("Enrollment", back_populates="course")
@@ -51,13 +51,13 @@ class Enrollment(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
-    enrolled_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    enrolled_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
     user = relationship("User")
     course = relationship("Course", back_populates="enrollments")
 
 
-class ProgressStatus(str, enum.Enum):
+class ProgressStatus(enum.StrEnum):
     not_started = "not_started"
     in_progress = "in_progress"
     completed = "completed"

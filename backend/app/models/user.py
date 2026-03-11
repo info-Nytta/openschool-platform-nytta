@@ -1,12 +1,12 @@
 import enum
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import Column, DateTime, Enum, Integer, String
 
 from app.database import Base
 
 
-class UserRole(str, enum.Enum):
+class UserRole(enum.StrEnum):
     student = "student"
     mentor = "mentor"
     admin = "admin"
@@ -21,6 +21,6 @@ class User(Base):
     email = Column(String)
     avatar_url = Column(String)
     role = Column(Enum(UserRole), default=UserRole.student, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     last_login = Column(DateTime)
     github_token = Column(String)

@@ -1,4 +1,9 @@
+import logging
+
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -13,6 +18,17 @@ class Settings(BaseSettings):
     github_webhook_secret: str = ""
     github_client_id: str = ""
     github_client_secret: str = ""
+
+    @model_validator(mode="after")
+    def validate_production_secrets(self) -> "Settings":
+        if self.environment == "production":
+            if self.secret_key == "change-me-in-production":
+                raise ValueError("SECRET_KEY must be changed in production")
+            if not self.github_client_secret:
+                raise ValueError("GITHUB_CLIENT_SECRET is required in production")
+            if not self.github_webhook_secret:
+                logger.warning("GITHUB_WEBHOOK_SECRET is not set — webhook verification disabled")
+        return self
 
     @property
     def allowed_origins_list(self) -> list[str]:

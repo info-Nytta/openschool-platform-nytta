@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -56,7 +56,7 @@ def auth_callback(code: str, db: Session = Depends(get_db), response: Response =
     # Create or update user
     user = db.query(User).filter(User.github_id == github_user["id"]).first()
     if user:
-        user.last_login = datetime.now(timezone.utc)
+        user.last_login = datetime.now(UTC)
         user.username = github_user.get("login", user.username)
         user.avatar_url = github_user.get("avatar_url", user.avatar_url)
         user.email = github_user.get("email", user.email)
@@ -67,7 +67,7 @@ def auth_callback(code: str, db: Session = Depends(get_db), response: Response =
             username=github_user.get("login", ""),
             email=github_user.get("email"),
             avatar_url=github_user.get("avatar_url"),
-            last_login=datetime.now(timezone.utc),
+            last_login=datetime.now(UTC),
             github_token=token_data["access_token"],
         )
         db.add(user)
@@ -117,7 +117,7 @@ def auth_refresh(request: Request, db: Session = Depends(get_db)):
     try:
         token_data = verify_token(refresh_token)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token") from None
 
     if token_data.get("payload", {}).get("type") != "refresh":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not a refresh token")

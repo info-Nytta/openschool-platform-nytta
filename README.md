@@ -1,5 +1,8 @@
 # OpenSchool Platform
 
+[![CI](https://github.com/ghemrich/openschool-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/ghemrich/openschool-platform/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Nyílt forráskódú oktatási platform, ahol a diákok valódi fejlesztői eszközökkel tanulnak programozni.
 
 > **Az open source nem feature — az open source a tanterv.**

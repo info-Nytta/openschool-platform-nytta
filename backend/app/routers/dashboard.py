@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -109,13 +109,13 @@ def update_exercise_progress(
     if progress:
         progress.status = status_value
         if status_value == ProgressStatus.completed:
-            progress.completed_at = datetime.now(timezone.utc)
+            progress.completed_at = datetime.now(UTC)
     else:
         progress = Progress(
             user_id=current_user.id,
             exercise_id=data.exercise_id,
             status=status_value,
-            completed_at=datetime.now(timezone.utc) if status_value == ProgressStatus.completed else None,
+            completed_at=datetime.now(UTC) if status_value == ProgressStatus.completed else None,
         )
         db.add(progress)
 
