@@ -65,6 +65,8 @@
 - Remove redundant API endpoints and project structure from README
 - Remove redundant local dev section from README
 - Remove redundant Makefile section from README
+- Regenerate CHANGELOG.md
+- Remove duplicate Discord channel structure from roadmap
 
 ### ⚙️ Miscellaneous Tasks
 
