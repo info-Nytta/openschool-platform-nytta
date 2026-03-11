@@ -1,6 +1,6 @@
 # OpenSchool Platform — Környezeti változók referencia
 
-> 📖 **Dokumentáció:** [Főoldal](../README.md) · [Architektúra](architektura.md) · [Telepítés](telepitesi-utmutato.md) · [Fejlesztői útmutató](fejlesztoi-utmutato.md) · [Backend](backend-fejlesztes.md) · [Frontend](frontend-fejlesztes.md) · [Roadmap](jovokep-es-fejlesztesi-terv.md) · [Felhasználói útmutató](felhasznaloi-utmutato.md) · [GitHub Classroom](github-classroom-integraciot.md) · [Karbantartás](karbantartas-utmutato.md) · [Automatizálás](automatizalas-beallitas.md) · [Discord](discord-integracio.md) · [Dokumentálás](dokumentacios-utmutato.md) · [API referencia](api-referencia.md) · [Adatbázis](adatbazis-sema.md) · [Tesztelés](tesztelesi-utmutato.md) · **Környezeti változók** · [Hozzájárulás](../CONTRIBUTING.md)
+> 📖 **Dokumentáció:** [Főoldal](../../README.md) · [Architektúra](architektura.md) · [Telepítés](telepitesi-utmutato.md) · **Környezeti változók** · [Fejlesztői útmutató](../development/fejlesztoi-utmutato.md) · [Backend](../development/backend-fejlesztes.md) · [Frontend](../development/frontend-fejlesztes.md) · [Tesztelés](../development/tesztelesi-utmutato.md) · [API referencia](../reference/api-referencia.md) · [Adatbázis](../reference/adatbazis-sema.md) · [Karbantartás](../operations/karbantartas-utmutato.md) · [Automatizálás](../operations/automatizalas-beallitas.md) · [GitHub Classroom](../integrations/github-classroom-integraciot.md) · [Discord](../integrations/discord-integracio.md) · [Felhasználói útmutató](../guides/felhasznaloi-utmutato.md) · [Dokumentálás](../guides/dokumentacios-utmutato.md) · [Roadmap](../jovokep-es-fejlesztesi-terv.md) · [Hozzájárulás](../../CONTRIBUTING.md)
 
 Ez a dokumentum az összes környezeti változót egy helyen összesíti: alkalmazás, Docker, GitHub Actions, VPS szkriptek.
 
@@ -94,7 +94,7 @@ A CI/CD workflow-k (`ci.yml`, `cd.yml`) ezeket a GitHub repository secrets-ből 
 
 ### SSH kulcs beállítás a CD-hez
 
-A `cd.yml` az `appleboy/ssh-action@v1` akciót használja. A cél szerveren az SSH kulcs alapú hitelesítést kell beállítani — lásd [Automatizálás](automatizalas-beallitas.md) és [Telepítés](telepitesi-utmutato.md).
+A `cd.yml` az `appleboy/ssh-action@v1` akciót használja. A cél szerveren az SSH kulcs alapú hitelesítést kell beállítani — lásd [Automatizálás](../operations/automatizalas-beallitas.md) és [Telepítés](telepitesi-utmutato.md).
 
 ---
 
