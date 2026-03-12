@@ -38,11 +38,13 @@ jobs:
             docker compose -f docker-compose.staging.yml --env-file .env.staging exec -T backend curl -f http://localhost:8000/health
             echo "Staging deploy successful!"
       - uses: actions/checkout@v6
+        if: always()
       - name: Discord notification
         if: always()
         env:
           DISCORD_WEBHOOK_CI: ${{ secrets.DISCORD_WEBHOOK_CI }}
         run: |
+          chmod +x ./scripts/discord-notify.sh
           ./scripts/discord-notify.sh \
             --status "${{ job.status }}" \
             --title "Staging Deploy" \
@@ -78,11 +80,13 @@ jobs:
 
             echo "Deploy successful!"
       - uses: actions/checkout@v6
+        if: always()
       - name: Discord notification
         if: always()
         env:
           DISCORD_WEBHOOK_CI: ${{ secrets.DISCORD_WEBHOOK_CI }}
         run: |
+          chmod +x ./scripts/discord-notify.sh
           ./scripts/discord-notify.sh \
             --status "${{ job.status }}" \
             --title "Production Deploy" \
