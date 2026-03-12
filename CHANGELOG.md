@@ -41,6 +41,7 @@
 - Strip newlines in discord-notify sanitize function
 - Remove duplicate staging server block causing wrong SSL cert
 - Remove create_all() — let alembic manage schema exclusively
+- Truncate Discord embed title to 256 chars and use first line only
 
 ### 💼 Other
 
@@ -96,6 +97,7 @@
 - Split installation guide into 3 focused files
 - Update all references for nginx envsubst template
 - Add Discord invite link and update roadmap progress
+- Update changelog and fix outdated documentation
 
 ### ⚙️ Miscellaneous Tasks
 
