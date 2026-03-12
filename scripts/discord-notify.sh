@@ -67,9 +67,9 @@ esac
 # Build JSON payload — construct URL field directly in the heredoc
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
 
-# Sanitize inputs — remove characters that break JSON
+# Sanitize inputs — remove characters that break JSON (quotes, backslashes, newlines, tabs)
 sanitize() {
-    printf '%s' "$1" | tr -d '"\\' | head -c 256
+    printf '%s' "$1" | tr -d '"\\\n\r\t' | tr -s ' ' | head -c 256
 }
 
 S_TITLE=$(sanitize "$TITLE")
