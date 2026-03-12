@@ -129,7 +129,7 @@ def download_certificate_pdf(
             logger.info("Certificate PDF regenerated: cert_id=%s", cert.cert_id)
         except Exception:
             logger.exception("Failed to regenerate certificate PDF: cert_id=%s", cert.cert_id)
-            raise HTTPException(status_code=500, detail="Failed to generate PDF")
+            raise HTTPException(status_code=500, detail="Failed to generate PDF") from None
 
     return FileResponse(cert.pdf_path, media_type="application/pdf", filename=f"certificate-{cert_id}.pdf")
 
