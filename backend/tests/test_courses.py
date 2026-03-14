@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from app.auth.jwt import create_access_token
@@ -14,6 +16,26 @@ def sample_course(db_session):
 
 
 # --- Courses CRUD ---
+
+
+def test_list_courses_ordered_by_created_at_asc(client, db_session):
+    """Courses should be returned in creation order (oldest first)."""
+    c1 = Course(name="First Course", description="Created first")
+    db_session.add(c1)
+    db_session.commit()
+    time.sleep(0.05)
+    c2 = Course(name="Second Course", description="Created second")
+    db_session.add(c2)
+    db_session.commit()
+    time.sleep(0.05)
+    c3 = Course(name="Third Course", description="Created third")
+    db_session.add(c3)
+    db_session.commit()
+
+    response = client.get("/api/courses")
+    assert response.status_code == 200
+    names = [c["name"] for c in response.json()["data"]]
+    assert names == ["First Course", "Second Course", "Third Course"]
 
 
 def test_list_courses_public(client, sample_course):

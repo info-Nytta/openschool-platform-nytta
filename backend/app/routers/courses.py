@@ -43,7 +43,7 @@ def list_courses(
 ):
     """List courses with pagination (public)."""
     total = db.query(Course).count()
-    courses = db.query(Course).order_by(Course.created_at.desc()).offset(skip).limit(limit).all()
+    courses = db.query(Course).order_by(Course.created_at.asc()).offset(skip).limit(limit).all()
     return {
         "total": total,
         "data": [
