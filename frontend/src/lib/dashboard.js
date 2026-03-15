@@ -106,11 +106,11 @@ async function loadDashboard() {
           .join("");
 
         const modulesHtml = `
-        <div>
+       ${
+         progressData.length > 0
+           ? `  <div>
       <div class="modulelists-container">
-     ${
-       progressData.length > 0
-         ? `<h2>Modulok - teljesítve: ${successfulModules}/${progressData.length}</h2>
+    <h2>Modulok - teljesítve: ${successfulModules}/${progressData.length}</h2>
        <button
             id="moduleList-toggleBtn"
             data-id="${index}"
@@ -121,10 +121,10 @@ async function loadDashboard() {
           </div>
       <div id="moduleList" data-id="${index}"  class="modulelists card closed">
       ${modulesLists}
+      </div>
       </div>`
-         : ""
-     }
-      </div>`;
+           : ""
+       }`;
 
         let certHtml = "";
         if (cert) {
