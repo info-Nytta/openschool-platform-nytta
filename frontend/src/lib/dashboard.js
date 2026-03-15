@@ -61,9 +61,6 @@ async function loadDashboard() {
         const progressData = await progressRes.json();
         const coursesData = await coursesRes.json();
 
-        console.log(progressData);
-        console.log(coursesData);
-
         let successfulModules = 0;
         for (const pr of progressData) {
           if (pr.exercises.every((ex) => ex.status === "completed"))
@@ -99,7 +96,13 @@ async function loadDashboard() {
                   );
 
                   return `<li class="modulelists_dropdownlist-item">
-                 ${exercise?.classroom_url ? `<a href="${exercise.classroom_url}">${ex.name}</a>` : `<span>${ex.name}</span>`}
+                 ${
+                   exercise?.classroom_url &&
+                   ex.status !== "completed" &&
+                   ex.status !== "in_progress"
+                     ? `<a href="${exercise.classroom_url}">${ex.name}</a>`
+                     : `<span>${ex.name}</span>`
+                 }
                     <span style="color:${
                       ex.status === "completed"
                         ? "green"
