@@ -93,7 +93,7 @@ async function loadDashboard() {
             // Lista a moduleokról, és azoknak a feladatairól
             return `
           <div data-id="${module.module_id}" class="modulelists_info">
-            <strong class="modulelists_title">${module.module_name} - teljesítve: ${module.exercises.filter((ex) => ex.status === "completed").length} / ${module.exercises.length}</strong>
+            <strong class="modulelists_title">${module.module_name} - teljesítve: ${module.exercises ? module.exercises.filter((ex) => ex.status === "completed").length : 0} / ${module.exercises ? module.exercises.length : 0}</strong>
             <ul class="modulelists_dropdownlist" data-id="${module.module_id}">
               ${module.exercises
                 .map((ex) => {
