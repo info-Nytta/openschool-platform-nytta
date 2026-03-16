@@ -70,20 +70,30 @@ async function loadDashboard() {
         const modulesLists = progressData
           .map((module) => {
             // A Statusok magyarosításához használt függvény
+            function prefixStatus(status) {
+              switch (status) {
+                case "in_progress":
+                  return "✏️";
+                case "completed":
+                  return "✅";
+                default:
+                  return "🔴";
+              }
+            }
             function translateStatus(status) {
               switch (status) {
                 case "in_progress":
-                  return "✏️ (Folyamatban)";
+                  return "(Folyamatban)";
                 case "completed":
-                  return "✅ (Teljesített)";
+                  return "(Teljesített)";
                 default:
-                  return "🔴 (Nincs elkezdve)";
+                  return "(Nincs elkezdve)";
               }
             }
             // Lista a moduleokról, és azoknak a feladatairól
             return `
           <div data-id="${module.module_id}" class="modulelists_info">
-            <strong class="modulelists_-title">${module.module_name} - teljesítve: ${module.exercises.filter((ex) => ex.status === "completed").length} / ${module.exercises.length}</strong>
+            <strong class="modulelists_title">${module.module_name} - teljesítve: ${module.exercises ? module.exercises.filter((ex) => ex.status === "completed").length : 0} / ${module.exercises ? module.exercises.length : 0}</strong>
             <ul class="modulelists_dropdownlist" data-id="${module.module_id}">
               ${module.exercises
                 .map((ex) => {
@@ -96,14 +106,15 @@ async function loadDashboard() {
                   );
 
                   return `<li class="modulelists_dropdownlist-item">
+                  <span>${prefixStatus(ex.status)}</span>
                  ${
                    exercise?.classroom_url &&
                    ex.status !== "completed" &&
                    ex.status !== "in_progress"
-                     ? `<a href="${exercise.classroom_url}">${ex.name}</a>`
+                     ? `<a href="${exercise.classroom_url}" target="_blank">${ex.name} 📎</a>`
                      : `<span>${ex.name}</span>`
                  }
-                    <span style="color:${
+                    <span class="moduleslists_dropdownlist-item-status" style="color:${
                       ex.status === "completed"
                         ? "green"
                         : ex.status === "in_progress"
@@ -116,8 +127,7 @@ async function loadDashboard() {
                 })
                 .join("")}
             </ul>
-          </div>
-          <hr style='border: 1px solid #acacac;  width=100%;'/>`;
+          </div>`;
           })
           .join("");
 
