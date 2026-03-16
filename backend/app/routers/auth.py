@@ -3,16 +3,19 @@ from datetime import UTC, datetime
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
-from app.auth.jwt import create_access_token, create_refresh_token
+from app.auth.jwt import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, create_refresh_token
 from app.config import settings
 from app.database import get_db
 from app.models.user import User
 from app.services.github import invite_user_to_org
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+limiter = Limiter(key_func=get_remote_address)
 
 GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize"
 GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
@@ -20,15 +23,40 @@ GITHUB_USER_URL = "https://api.github.com/user"
 
 
 @router.get("/login")
-def auth_login():
+@limiter.limit("10/minute")
+def auth_login(request: Request, response: Response):
     """Redirect to GitHub OAuth authorization page."""
-    url = f"{GITHUB_AUTHORIZE_URL}?client_id={settings.github_client_id}&scope=read:user user:email repo"
-    return RedirectResponse(url=url)
+    import secrets
+
+    state = secrets.token_urlsafe(32)
+    url = f"{GITHUB_AUTHORIZE_URL}?client_id={settings.github_client_id}&scope=read:user%20user:email&state={state}"
+    resp = RedirectResponse(url=url)
+    resp.set_cookie(
+        key="oauth_state",
+        value=state,
+        httponly=True,
+        samesite="lax",
+        max_age=600,
+        secure=settings.environment != "development",
+    )
+    return resp
 
 
 @router.get("/callback")
-def auth_callback(code: str, db: Session = Depends(get_db), response: Response = None):
+@limiter.limit("10/minute")
+def auth_callback(
+    code: str,
+    state: str = "",
+    request: Request = None,
+    db: Session = Depends(get_db),
+    response: Response = None,
+):
     """Handle GitHub OAuth callback: exchange code for token, create/update user, return JWT."""
+    # Verify OAuth state to prevent CSRF
+    expected_state = request.cookies.get("oauth_state") if request else None
+    if not expected_state or not state or expected_state != state:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state")
+
     # Exchange code for access token
     token_response = httpx.post(
         GITHUB_TOKEN_URL,
@@ -84,16 +112,26 @@ def auth_callback(code: str, db: Session = Depends(get_db), response: Response =
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
 
-    # Redirect to frontend with token in URL fragment (not sent to server)
-    redirect_url = f"/login#token={access_token}"
-    resp = RedirectResponse(url=redirect_url, status_code=302)
+    # Set tokens as secure HTTP-only cookies
+    resp = RedirectResponse(url="/dashboard", status_code=302)
+    is_secure = settings.environment != "development"
+    resp.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="lax",
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        secure=is_secure,
+    )
     resp.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
         samesite="lax",
         max_age=7 * 24 * 60 * 60,
+        secure=is_secure,
     )
+    resp.delete_cookie(key="oauth_state")
     return resp
 
 
@@ -111,6 +149,7 @@ def auth_me(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/refresh")
+@limiter.limit("20/minute")
 def auth_refresh(request: Request, db: Session = Depends(get_db)):
     """Issue a new access token using the refresh token cookie."""
     from app.auth.jwt import verify_token
@@ -132,13 +171,25 @@ def auth_refresh(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
     new_access_token = create_access_token(user.id)
-    return {"access_token": new_access_token, "token_type": "bearer"}
+    resp = Response(content='{"access_token": "ok", "token_type": "bearer"}')
+    resp.headers["Content-Type"] = "application/json"
+    is_secure = settings.environment != "development"
+    resp.set_cookie(
+        key="access_token",
+        value=new_access_token,
+        httponly=True,
+        samesite="lax",
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        secure=is_secure,
+    )
+    return resp
 
 
 @router.post("/logout")
 def auth_logout(response: Response):
-    """Clear the refresh token cookie."""
+    """Clear auth cookies."""
     response = Response(content='{"detail": "Logged out"}')
     response.headers["Content-Type"] = "application/json"
+    response.delete_cookie(key="access_token")
     response.delete_cookie(key="refresh_token")
     return response

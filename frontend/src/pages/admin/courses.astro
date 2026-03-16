@@ -10,13 +10,15 @@ import Layout from '../../layouts/Layout.astro';
   </section>
 
   <script>
-    const token = localStorage.getItem('access_token');
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     const container = document.getElementById('admin-content');
-    if (!token) { window.location.href = '/login'; }
-    const headers = { 'Authorization': `Bearer ${token}` };
 
     async function loadCourses() {
-      const meRes = await fetch('/api/auth/me', { headers });
+      const meRes = await fetch('/api/auth/me', { credentials: 'same-origin' });
       if (!meRes.ok) { window.location.href = '/login'; return; }
       const me = await meRes.json();
       if (me.role !== 'admin') {
@@ -56,13 +58,13 @@ import Layout from '../../layouts/Layout.astro';
           ${courses.map(c => `
             <div class="card course-card" data-course-id="${c.id}" style="margin-bottom:16px;">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <h3>${c.name}</h3>
+                <h3>${escapeHtml(c.name)}</h3>
                 <div style="display:flex;gap:8px;">
                   <button class="btn btn-secondary toggle-details" data-course-id="${c.id}" style="padding:6px 14px;font-size:0.85rem;">Részletek</button>
                   <button class="btn delete-course" data-course-id="${c.id}" style="padding:6px 14px;font-size:0.85rem;background:#e74c3c;color:#fff;">Törlés</button>
                 </div>
               </div>
-              <p style="color:var(--color-text-light);">${c.description || 'Nincs leírás'}</p>
+              <p style="color:var(--color-text-light);">${escapeHtml(c.description || 'Nincs leírás')}</p>
               <div class="course-details" id="details-${c.id}" style="display:none;margin-top:16px;border-top:1px solid var(--color-border);padding-top:16px;">
                 <p>Betöltés...</p>
               </div>
@@ -81,7 +83,8 @@ import Layout from '../../layouts/Layout.astro';
 
         const r = await fetch('/api/courses', {
           method: 'POST',
-          headers: { ...headers, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
           body: JSON.stringify({ name, description })
         });
         if (r.ok) {
@@ -89,7 +92,7 @@ import Layout from '../../layouts/Layout.astro';
           setTimeout(() => window.location.reload(), 500);
         } else {
           const d = await r.json();
-          msg.innerHTML = `<span style="color:var(--color-accent);">${d.detail || 'Hiba történt.'}</span>`;
+          msg.innerHTML = `<span style="color:var(--color-accent);">${escapeHtml(d.detail || 'Hiba történt.')}</span>`;
         }
       });
 
@@ -114,7 +117,7 @@ import Layout from '../../layouts/Layout.astro';
           if (!confirm('Biztosan törölni szeretnéd ezt a kurzust? Ez törli az összes modult, feladatot és beiratkozást!')) return;
           const r = await fetch(`/api/admin/courses/${courseId}`, {
             method: 'DELETE',
-            headers
+            credentials: 'same-origin'
           });
           if (r.ok) {
             btn.closest('.course-card').remove();
@@ -150,13 +153,13 @@ import Layout from '../../layouts/Layout.astro';
         ${course.modules.sort((a, b) => a.order - b.order).map(m => `
           <div class="module-block" style="background:var(--color-bg);padding:16px;border-radius:6px;margin-bottom:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <h4>${m.order}. ${m.name}</h4>
+              <h4>${m.order}. ${escapeHtml(m.name)}</h4>
               <button class="delete-module" data-module-id="${m.id}" style="background:#e74c3c;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.8rem;">Modul törlése</button>
             </div>
             <ul style="list-style:none;padding:0;">
               ${m.exercises.sort((a, b) => a.order - b.order).map(e => `
                 <li style="padding:6px 0;border-bottom:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;">
-                  <span>${e.order}. ${e.name} ${e.repo_prefix ? '<code style="font-size:0.8rem;background:#eee;padding:2px 6px;border-radius:3px;">' + e.repo_prefix + '</code>' : ''} ${e.classroom_url ? '📎' : ''}</span>
+                  <span>${e.order}. ${escapeHtml(e.name)} ${e.repo_prefix ? '<code style="font-size:0.8rem;background:#eee;padding:2px 6px;border-radius:3px;">' + escapeHtml(e.repo_prefix) + '</code>' : ''} ${e.classroom_url ? '📎' : ''}</span>
                   <button class="delete-exercise" data-exercise-id="${e.id}" style="background:#e74c3c;color:#fff;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:0.75rem;">✕</button>
                 </li>
               `).join('')}
@@ -193,7 +196,8 @@ import Layout from '../../layouts/Layout.astro';
           const order = parseInt(form.querySelector('.module-order').value) || 0;
           const r = await fetch(`/api/courses/${cid}/modules`, {
             method: 'POST',
-            headers: { ...headers, 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
             body: JSON.stringify({ name, order })
           });
           if (r.ok) { await loadCourseDetails(cid, detailsEl); }
@@ -209,7 +213,8 @@ import Layout from '../../layouts/Layout.astro';
           const mid = form.dataset.moduleId;
           const r = await fetch(`/api/courses/${cid}/modules/${mid}/exercises`, {
             method: 'POST',
-            headers: { ...headers, 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
             body: JSON.stringify({
               name: form.querySelector('.ex-name').value.trim(),
               repo_prefix: form.querySelector('.ex-repo').value.trim(),
@@ -227,7 +232,7 @@ import Layout from '../../layouts/Layout.astro';
         btn.addEventListener('click', async () => {
           if (!confirm('Biztosan törölni szeretnéd ezt a modult és az összes feladatát?')) return;
           const mid = btn.dataset.moduleId;
-          const r = await fetch(`/api/admin/modules/${mid}`, { method: 'DELETE', headers });
+          const r = await fetch(`/api/admin/modules/${mid}`, { method: 'DELETE', credentials: 'same-origin' });
           if (r.ok) { await loadCourseDetails(courseId, detailsEl); }
           else { const d = await r.json(); alert(d.detail || 'Hiba'); }
         });
@@ -237,7 +242,7 @@ import Layout from '../../layouts/Layout.astro';
       detailsEl.querySelectorAll('.delete-exercise').forEach(btn => {
         btn.addEventListener('click', async () => {
           const eid = btn.dataset.exerciseId;
-          const r = await fetch(`/api/admin/exercises/${eid}`, { method: 'DELETE', headers });
+          const r = await fetch(`/api/admin/exercises/${eid}`, { method: 'DELETE', credentials: 'same-origin' });
           if (r.ok) { btn.closest('li').remove(); }
           else { const d = await r.json(); alert(d.detail || 'Hiba'); }
         });

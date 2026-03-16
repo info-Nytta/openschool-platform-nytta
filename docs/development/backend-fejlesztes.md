@@ -42,11 +42,12 @@ A `requirements-dev.txt` első sora `-r requirements.txt`, ami automatikusan tel
 | `sqlalchemy` | ORM (adatbázis kezelés) |
 | `alembic` | Adatbázis migrációk |
 | `pydantic-settings` | Konfiguráció környezeti változókból |
-| `python-jose` | JWT tokenek |
+| `PyJWT` | JWT tokenek |
 | `httpx` | HTTP kliens a GitHub API-hoz |
 | `fpdf2` | Tanúsítvány PDF generálás |
 | `qrcode` | QR kód generálás tanúsítványokhoz |
 | `psycopg2-binary` | PostgreSQL driver |
+| `slowapi` | Rate limiting (API végpontok védelme) |
 | `pytest` | Tesztelés |
 
 ---
@@ -111,7 +112,7 @@ Az `environment` beállítás hatása:
 | Érték | Log szint | Swagger UI | SECRET_KEY validáció |
 |-------|-----------|------------|----------------------|
 | `development` | DEBUG | ✅ Elérhető (`/docs`) | Nincs |
-| `staging` | DEBUG | ✅ Elérhető (`/docs`) | Nincs |
+| `staging` | DEBUG | ❌ Kikapcsolt | **ValueError** — nem indul el |
 | `production` | INFO | ❌ Kikapcsolt | **ValueError** — nem indul el |
 
 ---
@@ -162,7 +163,7 @@ Minden router a `backend/app/routers/` mappában van és a `main.py`-ban regiszt
 | `/api/auth/refresh` | POST | Új access token a refresh token cookie-ból |
 | `/api/auth/logout` | POST | Refresh token cookie törlése |
 
-**OAuth flow:** A callback végpont cseréli a GitHub kódot access tokenre, lekérdezi a felhasználó adatait, majd JWT-t generál. Ha a `GITHUB_ORG` és `GITHUB_ORG_ADMIN_TOKEN` konfigurálva van, automatikusan meghívja a felhasználót a GitHub szervezetbe. A token a `/login#token=eyJ...` fragment-ben tér vissza. A refresh token httpOnly cookie-ként tárolódik.
+**OAuth flow:** A callback végpont cseréli a GitHub kódot access tokenre, lekérdezi a felhasználó adatait, majd JWT-t generál. Ha a `GITHUB_ORG` és `GITHUB_ORG_ADMIN_TOKEN` konfigurálva van, automatikusan meghívja a felhasználót a GitHub szervezetbe. Mind az access token, mind a refresh token httpOnly cookie-ként tárolódik (`access_token` és `refresh_token`). A CSRF elleni védelemként az OAuth flow `state` paramétert használ. Rate limiting: 10 kérés/perc a login és callback végpontokon.
 
 ### `courses.py` — Kurzusok
 

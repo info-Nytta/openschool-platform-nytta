@@ -13,6 +13,11 @@ const { id } = Astro.params;
   </div>
 
   <script>
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     const id = window.location.pathname.split('/').filter(Boolean).pop();
     async function verify() {
       const container = document.getElementById('verify-content');
@@ -32,10 +37,10 @@ const { id } = Astro.params;
           <div class="valid-badge">&#10003; Érvényes</div>
           <h1>OpenSchool Tanúsítvány</h1>
           <div class="verify-details">
-            <p><strong>Név:</strong> ${data.name}</p>
-            <p><strong>Kurzus:</strong> ${data.course}</p>
-            <p><strong>Kiállítva:</strong> ${new Date(data.issued_at).toLocaleDateString('hu-HU')}</p>
-            <p><strong>Azonosító:</strong> ${data.cert_id}</p>
+            <p><strong>Név:</strong> ${escapeHtml(data.name)}</p>
+            <p><strong>Kurzus:</strong> ${escapeHtml(data.course)}</p>
+            <p><strong>Kiállítva:</strong> ${escapeHtml(new Date(data.issued_at).toLocaleDateString('hu-HU'))}</p>
+            <p><strong>Azonosító:</strong> ${escapeHtml(data.cert_id)}</p>
           </div>
         `;
       } catch {

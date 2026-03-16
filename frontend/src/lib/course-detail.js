@@ -1,14 +1,13 @@
+import { escapeHtml } from './api.js';
+
 const slug = window.location.pathname.split("/").filter(Boolean).pop();
 
 async function loadCourse() {
   const container = document.getElementById("course-detail");
   if (!container) return;
 
-  const token = localStorage.getItem("access_token");
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
   try {
-    const res = await fetch(`/api/courses/${slug}`, { headers });
+    const res = await fetch(`/api/courses/${slug}`, { credentials: 'same-origin' });
     if (!res.ok) {
       container.innerHTML = "<p>Kurzus nem található.</p>";
       return;
@@ -18,10 +17,14 @@ async function loadCourse() {
     let progress = {};
     let userEnrolled = false;
 
-    if (token) {
+    // Check if user is authenticated by calling /api/auth/me
+    const meRes = await fetch('/api/auth/me', { credentials: 'same-origin' });
+    const isLoggedIn = meRes.ok;
+
+    if (isLoggedIn) {
       const [progressRes, coursesRes] = await Promise.all([
-        fetch(`/api/me/courses/${slug}/progress`, { headers }),
-        fetch(`/api/me/courses`, { headers }),
+        fetch(`/api/me/courses/${slug}/progress`, { credentials: 'same-origin' }),
+        fetch(`/api/me/courses`, { credentials: 'same-origin' }),
       ]);
       if (progressRes.ok) {
         progress = await progressRes.json();
@@ -40,13 +43,13 @@ async function loadCourse() {
           .map(
             (m) =>
               `<div class="card module-card">
-          <h3>${m.name}</h3>
+          <h3>${escapeHtml(m.name)}</h3>
           <ul>${m.exercises
             .map((e) => {
               const classroomLink = e.classroom_url
-                ? ` <a href="${e.classroom_url}" target="_blank" rel="noopener" class="classroom-link" title="Megnyitás GitHub Classroom-ban">📎</a>`
+                ? ` <a href="${escapeHtml(e.classroom_url)}" target="_blank" rel="noopener" class="classroom-link" title="Megnyitás GitHub Classroom-ban">📎</a>`
                 : "";
-              return `<li>${e.name}${classroomLink}</li>`;
+              return `<li>${escapeHtml(e.name)}${classroomLink}</li>`;
             })
             .join("")}</ul>
         </div>`,
@@ -55,8 +58,8 @@ async function loadCourse() {
     }
 
     container.innerHTML = `
-      <h1>${course.name}</h1>
-      <p class="course-desc">${course.description || ""}</p>
+      <h1>${escapeHtml(course.name)}</h1>
+      <p class="course-desc">${escapeHtml(course.description || "")}</p>
       ${
         userEnrolled
           ? ""
@@ -69,14 +72,13 @@ async function loadCourse() {
     document
       .getElementById("enroll-btn")
       ?.addEventListener("click", async () => {
-        const t = localStorage.getItem("access_token");
-        if (!t) {
+        if (!isLoggedIn) {
           window.location.href = "/login";
           return;
         }
         const r = await fetch(`/api/courses/${slug}/enroll`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${t}` },
+          credentials: "same-origin",
         });
         const msg = document.getElementById("enroll-msg");
         if (r.status === 201) {

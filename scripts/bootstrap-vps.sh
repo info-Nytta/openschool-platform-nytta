@@ -37,12 +37,13 @@ err()  { echo -e "${RED}✗${NC} $*" >&2; }
 
 prompt() {
     local var="$1" msg="$2" default="${3:-}"
+    local input
     if [ -n "$default" ]; then
         read -r -p "$msg [$default]: " input
-        eval "$var=\"${input:-$default}\""
+        printf -v "$var" '%s' "${input:-$default}"
     else
         read -r -p "$msg: " input
-        eval "$var=\"$input\""
+        printf -v "$var" '%s' "$input"
     fi
 }
 

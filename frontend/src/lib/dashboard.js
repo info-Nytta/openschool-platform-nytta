@@ -1,31 +1,20 @@
-function getToken() {
-  return localStorage.getItem("access_token");
-}
+import { escapeHtml } from './api.js';
 
 function requireAuth() {
-  const token = getToken();
-  if (!token) {
-    window.location.href = "/login";
-    return null;
-  }
-  return { Authorization: `Bearer ${token}` };
+  return true; // Auth is cookie-based, no token check needed
 }
 
 async function loadDashboard() {
   const container = document.getElementById("dashboard-content");
   if (!container) return;
 
-  const headers = requireAuth();
-  if (!headers) return;
-
   try {
     const [dashRes, certRes] = await Promise.all([
-      fetch("/api/me/dashboard", { headers }),
-      fetch("/api/me/certificates", { headers }),
+      fetch("/api/me/dashboard", { credentials: "same-origin" }),
+      fetch("/api/me/certificates", { credentials: "same-origin" }),
     ]);
 
     if (dashRes.status === 401 || dashRes.status === 403) {
-      localStorage.removeItem("access_token");
       window.location.href = "/login";
       return;
     }
@@ -54,8 +43,8 @@ async function loadDashboard() {
 
         // Az adott kurzus module-ok, és ezeknek a státuszainak lekérdezése
         const [progressRes, coursesRes] = await Promise.all([
-          fetch(`/api/me/courses/${c.course_id}/progress`, { headers }),
-          fetch(`/api/courses/${c.course_id}`, { headers }),
+          fetch(`/api/me/courses/${c.course_id}/progress`, { credentials: "same-origin" }),
+          fetch(`/api/courses/${c.course_id}`, { credentials: "same-origin" }),
         ]);
 
         const progressData = await progressRes.json();
@@ -93,7 +82,7 @@ async function loadDashboard() {
             // Lista a moduleokról, és azoknak a feladatairól
             return `
           <div data-id="${module.module_id}" class="modulelists_info">
-            <strong class="modulelists_title">${module.module_name} - teljesítve: ${module.exercises ? module.exercises.filter((ex) => ex.status === "completed").length : 0} / ${module.exercises ? module.exercises.length : 0}</strong>
+            <strong class="modulelists_title">${escapeHtml(module.module_name)} - teljesítve: ${module.exercises ? module.exercises.filter((ex) => ex.status === "completed").length : 0} / ${module.exercises ? module.exercises.length : 0}</strong>
             <ul class="modulelists_dropdownlist" data-id="${module.module_id}">
               ${module.exercises
                 .map((ex) => {
@@ -111,8 +100,8 @@ async function loadDashboard() {
                    exercise?.classroom_url &&
                    ex.status !== "completed" &&
                    ex.status !== "in_progress"
-                     ? `<a href="${exercise.classroom_url}" target="_blank">${ex.name} 📎</a>`
-                     : `<span>${ex.name}</span>`
+                     ? `<a href="${escapeHtml(exercise.classroom_url)}" target="_blank">${escapeHtml(ex.name)} 📎</a>`
+                     : `<span>${escapeHtml(ex.name)}</span>`
                  }
                     <span class="moduleslists_dropdownlist-item-status" style="color:${
                       ex.status === "completed"
@@ -154,14 +143,14 @@ async function loadDashboard() {
 
         let certHtml = "";
         if (cert) {
-          certHtml = `<button class="btn btn-secondary download-cert" data-cert-id="${cert.cert_id}" style="margin-top:8px;">PDF letöltése</button>`;
+          certHtml = `<button class="btn btn-secondary download-cert" data-cert-id="${escapeHtml(cert.cert_id)}" style="margin-top:8px;">PDF letöltése</button>`;
         } else if (isComplete) {
           certHtml = `<button class="btn btn-primary request-cert" data-course-id="${c.course_id}" style="margin-top:8px;">Tanúsítvány igénylése</button>`;
         }
 
         return `
           <div class="card" style="margin-bottom:16px;">
-            <h3>${c.course_name}</h3>
+            <h3>${escapeHtml(c.course_name)}</h3>
             <div class="progress-wrapper">
               <div class="progress-bar">
                 <div class="progress-bar-fill" style="width:${c.progress_percent}%;"></div>
@@ -185,7 +174,7 @@ async function loadDashboard() {
       btn.addEventListener("click", async (e) => {
         const certId = e.target.dataset.certId;
         const r = await fetch(`/api/me/certificates/${certId}/pdf`, {
-          headers,
+          credentials: "same-origin",
         });
         if (r.ok) {
           const blob = await r.blob();
@@ -206,7 +195,7 @@ async function loadDashboard() {
         const courseId = e.target.dataset.courseId;
         const r = await fetch(`/api/me/courses/${courseId}/certificate`, {
           method: "POST",
-          headers,
+          credentials: "same-origin",
         });
         if (r.status === 201) {
           window.location.reload();
@@ -239,9 +228,6 @@ async function loadDashboard() {
 
 function initSyncButton() {
   document.getElementById("sync-btn")?.addEventListener("click", async () => {
-    const headers = requireAuth();
-    if (!headers) return;
-
     const btn = document.getElementById("sync-btn");
     const msg = document.getElementById("sync-msg");
     if (btn) btn.disabled = true;
@@ -249,7 +235,7 @@ function initSyncButton() {
     try {
       const r = await fetch("/api/me/sync-progress", {
         method: "POST",
-        headers,
+        credentials: "same-origin",
       });
       if (r.ok) {
         if (msg)
@@ -258,7 +244,7 @@ function initSyncButton() {
       } else {
         const d = await r.json();
         if (msg)
-          msg.innerHTML = `<p style="color:red;">${d.detail || "Hiba történt."}</p>`;
+          msg.innerHTML = `<p style="color:red;">${escapeHtml(d.detail || "Hiba történt.")}</p>`;
       }
     } catch {
       if (msg)

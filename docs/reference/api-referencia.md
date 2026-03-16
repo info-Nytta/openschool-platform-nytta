@@ -10,22 +10,23 @@ Ez a dokumentum az összes API végpontot részletesen leírja: URL, metódus, h
 
 ## Hitelesítés
 
-Az API JWT (JSON Web Token) alapú hitelesítést használ:
+Az API JWT (JSON Web Token) alapú hitelesítést használ, cookie-kon keresztül:
 
-- **Access token:** `Authorization: Bearer <token>` fejléccel küldve, 30 perc érvényesség
-- **Refresh token:** HttpOnly cookie (`refresh_token`), 7 nap érvényesség, `SameSite=Lax`
+- **Access token:** httpOnly cookie (`access_token`), 30 perc érvényesség. Alternatívan `Authorization: Bearer <token>` fejléccel is küldhető (API kliensek számára)
+- **Refresh token:** httpOnly cookie (`refresh_token`), 7 nap érvényesség, `SameSite=Lax`
 - **Szerepkörök:** `student`, `mentor`, `admin` — egyes végpontok `admin` vagy `mentor` jogosultságot igényelnek
+- **Rate limiting:** Az auth végpontok (login, callback, refresh) rate limitáltak a bruteforce támadások ellen
 
 ### Token megszerzése
 
-1. A felhasználó a `/api/auth/login`-ra navigál → GitHub OAuth oldalra irányítás
-2. GitHub visszairányít a `/api/auth/callback`-re a kóddal
-3. A backend kicseréli a kódot access tokenre, létrehoz/frissít felhasználót
-4. Redirect: `/login#token=<access_token>` + `refresh_token` cookie beállítása
+1. A felhasználó a `/api/auth/login`-ra navigál → GitHub OAuth oldalra irányítás (+ `oauth_state` cookie CSRF védelemhez)
+2. GitHub visszairányít a `/api/auth/callback`-re a kóddal és `state` paraméterrel
+3. A backend ellenőrzi a `state` paramétert, kicseréli a kódot access tokenre, létrehoz/frissít felhasználót
+4. Redirect: `/dashboard` + `access_token` és `refresh_token` httpOnly cookie-k beállítása
 
 ### Token frissítés
 
-A frontend a `refresh_token` cookie-t használva a `POST /api/auth/refresh` végpontot hívja, hogy új access tokent kapjon.
+A frontend a `refresh_token` cookie-t használva a `POST /api/auth/refresh` végpontot hívja, hogy új access tokent kapjon. Az új access token szintén cookie-ként tárolódik.
 
 ---
 
@@ -78,6 +79,8 @@ Publikus — hitelesítés nem szükséges.
 | **Hitelesítés** | Nem szükséges |
 | **Válasz** | `302` redirect a GitHub-ra |
 | **Scope** | `read:user user:email` |
+| **Rate limit** | 10 kérés/perc |
+| **Cookie** | `oauth_state` beállítása (CSRF védelem, 10 perc érvényesség) |
 
 ---
 
@@ -88,9 +91,10 @@ GitHub OAuth callback — kódot fogad, tokent cserél, felhasználót hoz létr
 | | |
 |---|---|
 | **Hitelesítés** | Nem szükséges |
-| **Query paraméter** | `code` (GitHub OAuth kód) — **kötelező** |
-| **Siker** | `302` redirect: `/login#token=<access_token>` + `refresh_token` cookie |
-| **Hiba** | `401` — OAuth hiba vagy érvénytelen GitHub felhasználó |
+| **Query paraméterek** | `code` (GitHub OAuth kód) — **kötelező**, `state` (CSRF token) — **kötelező** |
+| **Rate limit** | 10 kérés/perc |
+| **Siker** | `302` redirect: `/dashboard` + `access_token` és `refresh_token` httpOnly cookie-k |
+| **Hiba** | `400` — érvénytelen OAuth state, `401` — OAuth hiba vagy érvénytelen GitHub felhasználó |
 
 **Felhasználó létrehozás/frissítés:** A callback létrehoz egy új `User` rekordot (ha nem létezik `github_id` alapján), vagy frissíti a meglévőt (`username`, `avatar_url`, `email`, `github_token`, `last_login`).
 
@@ -104,7 +108,7 @@ Az aktuálisan bejelentkezett felhasználó adatai.
 
 | | |
 |---|---|
-| **Hitelesítés** | Bearer token (bármely szerepkör) |
+| **Hitelesítés** | Bearer token vagy `access_token` cookie (bármely szerepkör) |
 | **Válasz** | `200` |
 
 ```json
@@ -225,7 +229,7 @@ Kurzus részletei modulokkal és feladatokkal (publikus).
 
 | | |
 |---|---|
-| **Hitelesítés** | Bearer token, `admin` szerepkör |
+| **Hitelesítés** | Bearer token vagy `access_token` cookie, `admin` szerepkör |
 | **Siker** | `201` |
 | **Hiba** | `422` — validációs hiba |
 
@@ -255,7 +259,7 @@ Kurzus módosítása.
 
 | | |
 |---|---|
-| **Hitelesítés** | Bearer token, `admin` szerepkör |
+| **Hitelesítés** | Bearer token vagy `access_token` cookie, `admin` szerepkör |
 | **Siker** | `200` |
 | **Hiba** | `404` — nem található |
 
@@ -269,7 +273,7 @@ Modul hozzáadása kurzushoz.
 
 | | |
 |---|---|
-| **Hitelesítés** | Bearer token, `admin` szerepkör |
+| **Hitelesítés** | Bearer token vagy `access_token` cookie, `admin` szerepkör |
 | **Siker** | `201` |
 | **Hiba** | `404` — kurzus nem található |
 
@@ -299,7 +303,7 @@ Feladat hozzáadása modulhoz.
 
 | | |
 |---|---|
-| **Hitelesítés** | Bearer token, `admin` szerepkör |
+| **Hitelesítés** | Bearer token vagy `access_token` cookie, `admin` szerepkör |
 | **Siker** | `201` |
 | **Hiba** | `404` — modul nem található |
 
@@ -335,7 +339,7 @@ Beiratkozás kurzusra (bejelentkezett felhasználó).
 
 | | |
 |---|---|
-| **Hitelesítés** | Bearer token (bármely szerepkör) |
+| **Hitelesítés** | Bearer token vagy `access_token` cookie (bármely szerepkör) |
 | **Siker** | `201` |
 | **Hiba** | `404` — kurzus nem található, `409` — már beiratkozott |
 
@@ -352,7 +356,7 @@ Leiratkozás kurzusról.
 
 | | |
 |---|---|
-| **Hitelesítés** | Bearer token (bármely szerepkör) |
+| **Hitelesítés** | Bearer token vagy `access_token` cookie (bármely szerepkör) |
 | **Siker** | `200` |
 | **Hiba** | `404` — nem beiratkozott |
 
@@ -401,7 +405,7 @@ A bejelentkezett felhasználó beiratkozott kurzusai haladás-összesítéssel.
 
 | | |
 |---|---|
-| **Hitelesítés** | Bearer token (bármely szerepkör) |
+| **Hitelesítés** | Bearer token vagy `access_token` cookie (bármely szerepkör) |
 | **Válasz** | `200` |
 
 ```json
@@ -431,7 +435,7 @@ Kurzus részletes haladása modulonként és feladatonként.
 
 | | |
 |---|---|
-| **Hitelesítés** | Bearer token (bármely szerepkör) |
+| **Hitelesítés** | Bearer token vagy `access_token` cookie (bármely szerepkör) |
 | **Válasz** | `200` |
 
 ```json
@@ -467,7 +471,7 @@ Feladat manuális teljesítés jelölése.
 
 | | |
 |---|---|
-| **Hitelesítés** | Bearer token (bármely szerepkör) |
+| **Hitelesítés** | Bearer token vagy `access_token` cookie (bármely szerepkör) |
 | **Siker** | `200` |
 | **Hiba** | `400` — nem beiratkozott vagy feladat nem tartozik a kurzushoz, `404` — feladat nem található |
 
@@ -497,7 +501,7 @@ Haladás szinkronizálása a GitHub CI állapotából. Végigmegy az összes bei
 
 | | |
 |---|---|
-| **Hitelesítés** | Bearer token (bármely szerepkör) |
+| **Hitelesítés** | Bearer token vagy `access_token` cookie (bármely szerepkör) |
 | **Siker** | `200` — frissített kurzuslista (mint `GET /api/me/courses`) |
 | **Hiba** | `400` — nincs GitHub token (újbóli bejelentkezés szükséges) |
 
@@ -513,7 +517,7 @@ A bejelentkezett felhasználó tanúsítványai.
 
 | | |
 |---|---|
-| **Hitelesítés** | Bearer token (bármely szerepkör) |
+| **Hitelesítés** | Bearer token vagy `access_token` cookie (bármely szerepkör) |
 | **Válasz** | `200` |
 
 ```json
@@ -534,7 +538,7 @@ Tanúsítvány igénylése befejezett kurzushoz. Generál PDF-et QR kóddal.
 
 | | |
 |---|---|
-| **Hitelesítés** | Bearer token (bármely szerepkör) |
+| **Hitelesítés** | Bearer token vagy `access_token` cookie (bármely szerepkör) |
 | **Siker** | `201` |
 | **Hiba** | `400` — kurzus nincs befejezve, `404` — kurzus nem található, `409` — tanúsítvány már létezik |
 

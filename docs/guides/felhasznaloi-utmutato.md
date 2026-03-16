@@ -20,7 +20,7 @@ A nyitóoldal öt részből áll:
 
 ### Belépés (`/login`)
 
-Egyetlen gomb: **„Belépés GitHub-bal"** — átirányít a GitHub OAuth folyamatba (`/api/auth/login`). Sikeres belépés után a backend JWT tokent ad vissza query paraméterben (`?token=...`), amelyet a frontend `localStorage`-ba ment, majd a dashboardra irányít.
+Egyetlen gomb: **„Belépés GitHub-bal"** — átirányít a GitHub OAuth folyamatba (`/api/auth/login`). Sikeres belépés után a backend JWT tokeneket httpOnly cookie-kként állítja be, majd a dashboardra irányít. A tokenek biztonságosan, a JavaScript számára nem hozzáférhető módon tárolódnak.
 
 > **Megjegyzés:** Az első bejelentkezéskor — ha konfigurálva van — automatikus meghívást kapsz a GitHub szervezetbe, így hozzáférsz a kurzusok feladataihoz.
 

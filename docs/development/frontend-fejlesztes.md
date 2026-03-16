@@ -115,7 +115,7 @@ Minden oldal a `Layout` komponenst használja, ami biztosítja:
 - **Footer** — copyright
 - **Hamburger menü** — mobil nézetben
 
-Az auth navigáció dinamikus: a layout `<script>` blokkja ellenőrzi a `localStorage` tokent, és ha van, lekérdezi a `/api/auth/me` végpontot a szerepkör megállapításához. Admin felhasználóknál megjelenik az „Admin" link.
+Az auth navigáció dinamikus: a layout `<script>` blokkja lekérdezi a `/api/auth/me` végpontot cookie-alapú hitelesítéssel (`credentials: 'same-origin'`), és a válasz alapján jeleníti meg a navigációs elemeket. Admin felhasználóknál megjelenik az „Admin” link. Ha a felhasználó nincs bejelentkezve, a „Belépés” gomb jelenik meg.
 
 ```astro
 <!-- Használat egy oldalban -->
@@ -151,7 +151,7 @@ import Layout from '../layouts/Layout.astro';
 | Kezdőoldal | `pages/index.astro` | Hero szekció, gyorsindítási útmutató, „Hogyan működik?" lépések, közösség szekció (Discord, GitHub, Tudásbázis), kurzus előnézet |
 | Kurzuslista | `pages/courses/index.astro` | Összes kurzus kártya nézetben |
 | Kurzus részletek | `pages/courses/[slug].astro` | Modulok, feladatok, beiratkozás gomb, Classroom linkek |
-| Belépés | `pages/login.astro` | GitHub OAuth gomb, token kezelés URL fragment-ből |
+| Belépés | `pages/login.astro` | GitHub OAuth gomb, cookie-alapú hitelesítés ellenőrzés |
 | Verifikáció | `pages/verify/[id].astro` | Tanúsítvány publikus hitelesítés |
 
 ### Védett oldalak (bejelentkezés szükséges)
@@ -171,11 +171,12 @@ Mivel az Astro statikus HTML-t generál, az interaktív funkciók kliens oldali 
 
 ### `api.js` — API wrapper
 
-Az `apiFetch()` függvény kezeli az autentikációt:
+Az `apiFetch()` függvény kezeli az autentikációt cookie-alapon:
 
-1. Hozzáadja a `Bearer` tokent a kéréshez a `localStorage`-ból
+1. Cookie-kat küldi a kéréssel (`credentials: 'same-origin'`)
 2. Ha a válasz `401`, megpróbálja frissíteni a tokent a `/api/auth/refresh` végponton
 3. Ha a refresh is sikertelen, átirányít a `/login` oldalra
+4. Exportálja az `escapeHtml()` segédfüggvényt XSS védelemhez
 
 ```javascript
 import { apiFetch } from '../lib/api.js';
@@ -205,44 +206,38 @@ A dashboard oldal teljes kliens oldali logikája:
 
 ## 7. Autentikáció
 
-### Token kezelés
+### Cookie-alapú hitelesítés
 
-A frontend `localStorage`-ban tárolja az access tokent:
+A frontend httpOnly cookie-kat használ az autentikációhoz. A tokenek közvetlenül nem hozzáférhetőek JavaScript-ből — a böngésző automatikusan küldi őket minden kéréssel.
 
 ```javascript
-// Token mentése (login.astro — OAuth callback után)
-const hash = window.location.hash.substring(1);
-const params = new URLSearchParams(hash);
-const token = params.get('token');
-localStorage.setItem('access_token', token);
+// API hívás hitelesítéssel
+const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
 
-// Token használata API hívásoknál
-const headers = { Authorization: `Bearer ${token}` };
-
-// Kijelentkezés
-localStorage.removeItem('access_token');
+// Kijelentkezés — a backend törli a cookie-kat
+await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
 ```
 
 ### Auth flow
 
 1. Felhasználó kattint a „Belépés GitHub-bal" gombra → `/api/auth/login`
-2. Backend átirányít a GitHub OAuth oldalra
-3. GitHub visszairányít → `/api/auth/callback?code=xxx`
-4. Backend JWT-t generál, átirányít → `/login#token=eyJ...`
-5. A `login.astro` script kiszedi a tokent a URL fragment-ből és elmenti
+2. Backend beállítja az `oauth_state` cookie-t és átirányít a GitHub OAuth oldalra
+3. GitHub visszairányít → `/api/auth/callback?code=xxx&state=yyy`
+4. Backend ellenőrzi a `state` paramétert (CSRF védelem), JWT-t generál, beállítja az `access_token` és `refresh_token` cookie-kat
+5. Redirect → `/dashboard`
 
 ### Védett oldalak
 
-A védett oldalak (dashboard, admin) kliens oldalon ellenőrzik a tokent:
+A védett oldalak (dashboard, admin) a `/api/auth/me` végponton ellenőrzik a hitelesítést:
 
 ```javascript
-const token = localStorage.getItem('access_token');
-if (!token) {
+const meRes = await fetch('/api/auth/me', { credentials: 'same-origin' });
+if (!meRes.ok) {
   window.location.href = '/login';
 }
 ```
 
-Az admin oldalak ezen felül a `/api/auth/me` végponton ellenőrzik a szerepkört:
+Az admin oldalak ezen felül a szerepkört is ellenőrzik:
 
 ```javascript
 const me = await meRes.json();
@@ -250,6 +245,25 @@ if (me.role !== 'admin') {
   container.innerHTML = '<p>Nincs jogosultságod.</p>';
   return;
 }
+```
+
+### XSS védelem
+
+Minden felhasználói adatot `escapeHtml()` függvénnyel kell kimenetre írni a template literálokban:
+
+```javascript
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Használat
+container.innerHTML = `<h3>${escapeHtml(course.name)}</h3>`;
 ```
 
 ---

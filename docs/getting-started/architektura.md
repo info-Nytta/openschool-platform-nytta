@@ -78,8 +78,8 @@ sequenceDiagram
   B->>G: Felhasználói adatok lekérdezése
   G-->>B: Profil (id, username, email, avatar)
   B->>B: User létrehozás/frissítés + JWT generálás
-  B-->>D: 302 → /login#token=eyJ... (+ refresh cookie)
-  D->>D: Token mentése localStorage-ba
+  B-->>D: 302 → /dashboard (+ access_token és refresh_token cookie-k)
+  D->>D: Cookie-k automatikusan tárolva
 ```
 
 ### Szerepkör-alapú hozzáférés
@@ -205,9 +205,10 @@ Mikor fut: push a `main` vagy `develop` ágra (csak ha a `VPS_HOST` repository v
 | `sqlalchemy` | ORM (adatbázis kezelés) |
 | `alembic` | Adatbázis migrációk |
 | `pydantic-settings` | Konfiguráció környezeti változókból |
-| `python-jose` | JWT tokenek |
+| `PyJWT` | JWT tokenek |
 | `httpx` | HTTP kliens a GitHub API-hoz |
 | `fpdf2` | Tanúsítvány PDF generálás |
 | `qrcode` | QR kód generálás tanúsítványokhoz |
 | `psycopg2-binary` | PostgreSQL driver |
+| `slowapi` | Rate limiting (API végpontok védelme) |
 | `pytest` | Tesztelés |

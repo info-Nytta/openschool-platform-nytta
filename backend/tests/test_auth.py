@@ -55,14 +55,18 @@ def test_callback_with_valid_code(client, db_session):
         "avatar_url": "https://avatars.example.com/67890",
     }
 
+    state = "test_state_value"
     with (
         patch("app.routers.auth.httpx.post", return_value=mock_token_response),
         patch("app.routers.auth.httpx.get", return_value=mock_user_response),
     ):
-        response = client.get("/api/auth/callback?code=valid_code", follow_redirects=False)
+        client.cookies.set("oauth_state", state)
+        response = client.get(f"/api/auth/callback?code=valid_code&state={state}", follow_redirects=False)
 
     assert response.status_code == 302
-    assert "/login#token=" in response.headers["location"]
+    assert "/dashboard" in response.headers["location"]
+    assert "access_token" in response.cookies
+    assert "refresh_token" in response.cookies
 
     user = db_session.query(User).filter(User.github_id == 67890).first()
     assert user is not None
@@ -73,8 +77,10 @@ def test_callback_with_invalid_code(client):
     mock_response = MagicMock()
     mock_response.json.return_value = {"error": "bad_verification_code"}
 
+    state = "test_state_value"
     with patch("app.routers.auth.httpx.post", return_value=mock_response):
-        response = client.get("/api/auth/callback?code=invalid_code")
+        client.cookies.set("oauth_state", state)
+        response = client.get(f"/api/auth/callback?code=invalid_code&state={state}")
 
     assert response.status_code == 401
 
@@ -91,14 +97,16 @@ def test_existing_user_login_updates_last_login(client, db_session, test_user):
         "avatar_url": "https://avatars.example.com/12345",
     }
 
+    state = "test_state_value"
     with (
         patch("app.routers.auth.httpx.post", return_value=mock_token_response),
         patch("app.routers.auth.httpx.get", return_value=mock_user_response),
     ):
-        response = client.get("/api/auth/callback?code=valid_code", follow_redirects=False)
+        client.cookies.set("oauth_state", state)
+        response = client.get(f"/api/auth/callback?code=valid_code&state={state}", follow_redirects=False)
 
     assert response.status_code == 302
-    assert "/login#token=" in response.headers["location"]
+    assert "/dashboard" in response.headers["location"]
     db_session.refresh(test_user)
     assert test_user.last_login is not None
 

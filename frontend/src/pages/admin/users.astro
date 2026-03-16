@@ -10,15 +10,15 @@ import Layout from '../../layouts/Layout.astro';
   </section>
 
   <script>
-    const token = localStorage.getItem('access_token');
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     const container = document.getElementById('admin-content');
 
-    if (!token) { window.location.href = '/login'; }
-
     async function loadUsers() {
-      const headers = { 'Authorization': `Bearer ${token}` };
-
-      const meRes = await fetch('/api/auth/me', { headers });
+      const meRes = await fetch('/api/auth/me', { credentials: 'same-origin' });
       if (!meRes.ok) { window.location.href = '/login'; return; }
       const me = await meRes.json();
       if (me.role !== 'admin') {
@@ -26,7 +26,7 @@ import Layout from '../../layouts/Layout.astro';
         return;
       }
 
-      const res = await fetch('/api/admin/users', { headers });
+      const res = await fetch('/api/admin/users', { credentials: 'same-origin' });
       if (!res.ok) {
         container.innerHTML = '<p>Hiba történt.</p>';
         return;
@@ -57,18 +57,18 @@ import Layout from '../../layouts/Layout.astro';
             <tbody>
               ${users.map(u => `
                 <tr>
-                  <td><img src="${u.avatar_url || ''}" alt="" class="avatar" /></td>
-                  <td><strong>${u.username}</strong></td>
-                  <td>${u.email || '–'}</td>
+                  <td><img src="${escapeHtml(u.avatar_url || '')}" alt="" class="avatar" /></td>
+                  <td><strong>${escapeHtml(u.username)}</strong></td>
+                  <td>${escapeHtml(u.email || '–')}</td>
                   <td>
-                    <select class="role-select" data-user-id="${u.id}" data-current-role="${u.role}">
+                    <select class="role-select" data-user-id="${u.id}" data-current-role="${escapeHtml(u.role)}">
                       <option value="student" ${u.role === 'student' ? 'selected' : ''}>Student</option>
                       <option value="mentor" ${u.role === 'mentor' ? 'selected' : ''}>Mentor</option>
                       <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
                     </select>
                   </td>
-                  <td>${u.created_at ? new Date(u.created_at).toLocaleDateString('hu-HU') : '–'}</td>
-                  <td>${u.last_login ? new Date(u.last_login).toLocaleDateString('hu-HU') : '–'}</td>
+                  <td>${u.created_at ? escapeHtml(new Date(u.created_at).toLocaleDateString('hu-HU')) : '–'}</td>
+                  <td>${u.last_login ? escapeHtml(new Date(u.last_login).toLocaleDateString('hu-HU')) : '–'}</td>
                   <td>
                     <button class="btn-save-role btn btn-primary" data-user-id="${u.id}" style="padding:6px 14px;font-size:0.85rem;display:none;">Mentés</button>
                   </td>
@@ -103,7 +103,8 @@ import Layout from '../../layouts/Layout.astro';
 
           const r = await fetch(`/api/admin/users/${userId}/role`, {
             method: 'PATCH',
-            headers: { ...headers, 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
             body: JSON.stringify({ role: newRole })
           });
 
@@ -113,7 +114,7 @@ import Layout from '../../layouts/Layout.astro';
             msg.innerHTML = `<span style="color:var(--color-success);">Szerepkör frissítve.</span>`;
           } else {
             const d = await r.json();
-            msg.innerHTML = `<span style="color:var(--color-accent);">${d.detail || 'Hiba történt.'}</span>`;
+            msg.innerHTML = `<span style="color:var(--color-accent);">${escapeHtml(d.detail || 'Hiba történt.')}</span>`;
           }
         });
       });

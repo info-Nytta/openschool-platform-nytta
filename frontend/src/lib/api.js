@@ -1,37 +1,44 @@
+// api.js — Shared API wrapper with auto-refresh (cookie-based auth)
 const API_BASE = '';
 
+/**
+ * Escape HTML special characters to prevent XSS.
+ * @param {string} str
+ * @returns {string}
+ */
+export function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export async function apiFetch(path, options = {}) {
-  const token = localStorage.getItem('access_token');
   const headers = { ...options.headers };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  let res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  let res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
+    credentials: 'same-origin',
+  });
 
   // Try refresh if token expired
-  if (res.status === 401 && token) {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (refreshToken) {
-      const refreshRes = await fetch(`${API_BASE}/api/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      });
+  if (res.status === 401) {
+    const refreshRes = await fetch(`${API_BASE}/api/auth/refresh`, {
+      method: 'POST',
+      credentials: 'same-origin',
+    });
 
-      if (refreshRes.ok) {
-        const data = await refreshRes.json();
-        localStorage.setItem('access_token', data.access_token);
-        headers['Authorization'] = `Bearer ${data.access_token}`;
-        res = await fetch(`${API_BASE}${path}`, { ...options, headers });
-      } else {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
-      }
+    if (refreshRes.ok) {
+      res = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers,
+        credentials: 'same-origin',
+      });
     } else {
-      localStorage.removeItem('access_token');
       window.location.href = '/login';
     }
   }

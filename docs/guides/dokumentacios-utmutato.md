@@ -122,7 +122,7 @@ const { percentage, label } = Astro.props;
 A `src/lib/` mappában lévő JS fájlok fejlécébe írj egy egysoros leírást:
 
 ```javascript
-// api.js — Közös API hívások a backendhez (fetch wrapper, auth header kezelés)
+// api.js — Közös API hívások a backendhez (fetch wrapper, cookie-alapú auth, XSS védelem)
 ```
 
 Összetett függvények felett használj JSDoc-ot:

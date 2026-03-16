@@ -4,6 +4,8 @@ import logging
 from datetime import UTC
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -14,6 +16,7 @@ from app.models.user import User
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 def _verify_signature(payload: bytes, signature: str | None, secret: str) -> bool:
@@ -25,6 +28,7 @@ def _verify_signature(payload: bytes, signature: str | None, secret: str) -> boo
 
 
 @router.post("/github")
+@limiter.limit("60/minute")
 async def github_webhook(
     request: Request,
     db: Session = Depends(get_db),
@@ -38,11 +42,13 @@ async def github_webhook(
     """
     body = await request.body()
 
-    # Verify signature if webhook secret is configured
-    if settings.github_webhook_secret and not _verify_signature(
-        body, x_hub_signature_256, settings.github_webhook_secret
-    ):
-        raise HTTPException(status_code=403, detail="Invalid signature")
+    # Verify signature — reject if secret is configured and signature is invalid,
+    # or if in production and no secret is configured
+    if settings.github_webhook_secret:
+        if not _verify_signature(body, x_hub_signature_256, settings.github_webhook_secret):
+            raise HTTPException(status_code=403, detail="Invalid signature")
+    elif settings.environment in ("production", "staging"):
+        raise HTTPException(status_code=403, detail="Webhook secret not configured")
 
     if x_github_event != "workflow_run":
         return {"status": "ignored", "event": x_github_event}

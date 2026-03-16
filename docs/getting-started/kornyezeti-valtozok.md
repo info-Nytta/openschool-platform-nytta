@@ -27,7 +27,7 @@ Ezeket a `.env` fájlban kell beállítani a projekt gyökerében. A backend a `
 |---------|----------|---------|--------|
 | `SECRET_KEY` | **Élesben kötelező** | `change-me-in-production` | JWT token aláíró kulcs (HS256). **Éles módban nem maradhat az alapértelmezett érték** — a backend `ValueError`-t dob induláskor. Generálás: `openssl rand -hex 32` |
 
-> **Fontos:** Ha `ENVIRONMENT=production` és a `SECRET_KEY` az alapértelmezett, a backend nem indul el.
+> **Fontos:** Ha `ENVIRONMENT=production` vagy `ENVIRONMENT=staging` és a `SECRET_KEY` az alapértelmezett, a backend nem indul el.
 
 ### Alkalmazás
 
@@ -42,11 +42,11 @@ Ezeket a `.env` fájlban kell beállítani a projekt gyökerében. A backend a `
 | Hatás | `development` | `staging` | `production` |
 |-------|---------------|-----------|--------------|
 | Log szint | `DEBUG` | `DEBUG` | `INFO` |
-| Swagger UI (`/docs`) | ✅ Elérhető | ✅ Elérhető | ❌ Kikapcsolva |
-| ReDoc (`/redoc`) | ✅ Elérhető | ✅ Elérhető | ❌ Kikapcsolva |
-| SECRET_KEY validáció | Nem | Nem | **Kötelező megváltoztatni** |
-| GITHUB_CLIENT_SECRET | Nem kötelező | Nem kötelező | **Kötelező** |
-| GITHUB_WEBHOOK_SECRET | Nem kötelező | Nem kötelező | Figyelmeztetés, ha hiányzik |
+| Swagger UI (`/docs`) | ✅ Elérhető | ❌ Kikapcsolva | ❌ Kikapcsolva |
+| ReDoc (`/redoc`) | ✅ Elérhető | ❌ Kikapcsolva | ❌ Kikapcsolva |
+| SECRET_KEY validáció | Nem | **Kötelező megváltoztatni** | **Kötelező megváltoztatni** |
+| GITHUB_CLIENT_SECRET | Nem kötelező | **Kötelező** | **Kötelező** |
+| GITHUB_WEBHOOK_SECRET | Nem kötelező | **Kötelező** | **Kötelező** |
 
 ### GitHub OAuth
 
@@ -56,7 +56,7 @@ Ezeket a `.env` fájlban kell beállítani a projekt gyökerében. A backend a `
 | `GITHUB_CLIENT_SECRET` | Bejelentkezéshez | `""` | GitHub OAuth App Client Secret. **Élesben kötelező** |
 | `GITHUB_ORG` | Nem | `""` | GitHub szervezet neve a repók kereséséhez. Ha üres, a felhasználó saját fiókja alatt keres |
 | `GITHUB_ORG_ADMIN_TOKEN` | Nem | `""` | Personal Access Token (classic) org tulajdonostól, `admin:org` scope-pal. Ha be van állítva (és `GITHUB_ORG` is kitöltve), az első bejelentkezéskor automatikusan meghívja a felhasználót a GitHub szervezetbe. Létrehozás: [github.com/settings/tokens](https://github.com/settings/tokens) → „Generate new token (classic)" → `admin:org` |
-| `GITHUB_WEBHOOK_SECRET` | Ajánlott | `""` | Webhook HMAC-SHA256 aláíró kulcs. Ha üres, webhook aláírás ellenőrzés kikapcsolt. Generálás: `openssl rand -hex 20` |
+| `GITHUB_WEBHOOK_SECRET` | **Staging/élesben kötelező** | `""` | Webhook HMAC-SHA256 aláíró kulcs. Staging és production környezetben kötelező — a webhook végpont elutasítja az aláírás nélküli kéréseket. Generálás: `openssl rand -hex 20` |
 
 ---
 
@@ -179,5 +179,7 @@ A `backend/app/config.py` fájlban a `Settings` osztály Pydantic `model_validat
 |----------|----------|
 | `ENVIRONMENT=production` + `SECRET_KEY=change-me-in-production` | **ValueError** — a backend nem indul el |
 | `ENVIRONMENT=production` + `GITHUB_CLIENT_SECRET` üres | **ValueError** — a backend nem indul el |
-| `ENVIRONMENT=production` + `GITHUB_WEBHOOK_SECRET` üres | **Warning** — a backend elindul, de webhook aláírás nem ellenőrzött |
+| `ENVIRONMENT=production` + `GITHUB_WEBHOOK_SECRET` üres | **ValueError** — a backend nem indul el |
+| `ENVIRONMENT=staging` + `SECRET_KEY=change-me-in-production` | **ValueError** — a backend nem indul el |
+| `ENVIRONMENT=staging` + `GITHUB_WEBHOOK_SECRET` üres | **ValueError** — a backend nem indul el |
 | `GITHUB_ORG_ADMIN_TOKEN` üres (bármely környezet) | Org meghívás kimarad — a bejelentkezés normálisan működik, de a felhasználó nem kap automatikus meghívást a GitHub szervezetbe |

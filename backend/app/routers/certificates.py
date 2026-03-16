@@ -131,7 +131,12 @@ def download_certificate_pdf(
             logger.exception("Failed to regenerate certificate PDF: cert_id=%s", cert.cert_id)
             raise HTTPException(status_code=500, detail="Failed to generate PDF") from None
 
-    return FileResponse(cert.pdf_path, media_type="application/pdf", filename=f"certificate-{cert_id}.pdf")
+    # Validate the resolved path is within CERT_DIR to prevent path traversal
+    resolved_path = Path(cert.pdf_path).resolve()
+    if not resolved_path.is_relative_to(CERT_DIR.resolve()):
+        raise HTTPException(status_code=403, detail="Invalid certificate path")
+
+    return FileResponse(str(resolved_path), media_type="application/pdf", filename=f"certificate-{cert_id}.pdf")
 
 
 @router.get("/api/verify/{cert_id}")

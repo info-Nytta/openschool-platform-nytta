@@ -10,18 +10,11 @@ import Layout from '../../layouts/Layout.astro';
   </section>
 
   <script>
-    const token = localStorage.getItem('access_token');
     const container = document.getElementById('admin-content');
 
-    if (!token) {
-      window.location.href = '/login';
-    }
-
     async function loadAdmin() {
-      const headers = { 'Authorization': `Bearer ${token}` };
-
       // Check admin role
-      const meRes = await fetch('/api/auth/me', { headers });
+      const meRes = await fetch('/api/auth/me', { credentials: 'same-origin' });
       if (!meRes.ok) { window.location.href = '/login'; return; }
       const me = await meRes.json();
       if (me.role !== 'admin') {
@@ -30,7 +23,7 @@ import Layout from '../../layouts/Layout.astro';
       }
 
       // Load stats
-      const statsRes = await fetch('/api/admin/stats', { headers });
+      const statsRes = await fetch('/api/admin/stats', { credentials: 'same-origin' });
       if (!statsRes.ok) {
         container.innerHTML = '<p>Hiba történt a statisztikák betöltésekor.</p>';
         return;
