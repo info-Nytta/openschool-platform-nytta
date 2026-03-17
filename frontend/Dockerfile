@@ -7,4 +7,4 @@ RUN npm run build
 
 FROM nginx:alpine
 COPY --from=build /app/dist /app/dist
-CMD ["sh", "-c", "cp -r /app/dist/* /usr/share/nginx/html/ 2>/dev/null; nginx -g 'daemon off;'"]
+CMD ["sh", "-c", "rm -rf /usr/share/nginx/html/* && cp -r /app/dist/* /usr/share/nginx/html/ && nginx -g 'daemon off;'"]
