@@ -77,7 +77,7 @@ def request_certificate(
         CERT_DIR.mkdir(parents=True, exist_ok=True)
         pdf_path = CERT_DIR / f"{cert.cert_id}.pdf"
         pdf_path.write_bytes(pdf_bytes)
-        cert.pdf_path = str(pdf_path)
+        cert.pdf_path = f"{cert.cert_id}.pdf"
         db.commit()
         logger.info(
             "Certificate generated: cert_id=%s user=%s course=%s",
@@ -103,7 +103,8 @@ def download_certificate_pdf(
         raise HTTPException(status_code=404, detail="Certificate not found")
 
     # Regenerate PDF if missing (e.g. after container recreate)
-    if not cert.pdf_path or not Path(cert.pdf_path).is_file():
+    resolved_path = (CERT_DIR / cert.pdf_path).resolve() if cert.pdf_path else None
+    if not resolved_path or not resolved_path.is_file():
         course = db.query(Course).filter(Course.id == cert.course_id).first()
         if not course:
             raise HTTPException(status_code=404, detail="PDF not found")
@@ -124,15 +125,15 @@ def download_certificate_pdf(
             CERT_DIR.mkdir(parents=True, exist_ok=True)
             pdf_path = CERT_DIR / f"{cert.cert_id}.pdf"
             pdf_path.write_bytes(pdf_bytes)
-            cert.pdf_path = str(pdf_path)
+            cert.pdf_path = f"{cert.cert_id}.pdf"
             db.commit()
             logger.info("Certificate PDF regenerated: cert_id=%s", cert.cert_id)
         except Exception:
             logger.exception("Failed to regenerate certificate PDF: cert_id=%s", cert.cert_id)
             raise HTTPException(status_code=500, detail="Failed to generate PDF") from None
+        resolved_path = (CERT_DIR / cert.pdf_path).resolve()
 
     # Validate the resolved path is within CERT_DIR to prevent path traversal
-    resolved_path = Path(cert.pdf_path).resolve()
     if not resolved_path.is_relative_to(CERT_DIR.resolve()):
         raise HTTPException(status_code=403, detail="Invalid certificate path")
 

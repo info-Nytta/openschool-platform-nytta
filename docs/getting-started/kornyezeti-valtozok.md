@@ -46,7 +46,7 @@ Ezeket a `.env` fájlban kell beállítani a projekt gyökerében. A backend a `
 | ReDoc (`/redoc`) | ✅ Elérhető | ❌ Kikapcsolva | ❌ Kikapcsolva |
 | SECRET_KEY validáció | Nem | **Kötelező megváltoztatni** | **Kötelező megváltoztatni** |
 | GITHUB_CLIENT_SECRET | Nem kötelező | **Kötelező** | **Kötelező** |
-| GITHUB_WEBHOOK_SECRET | Nem kötelező | **Kötelező** | **Kötelező** |
+| `GITHUB_WEBHOOK_SECRET` | Nem kötelező | Ajánlott | **Kötelező** |
 
 ### GitHub OAuth
 
@@ -56,7 +56,8 @@ Ezeket a `.env` fájlban kell beállítani a projekt gyökerében. A backend a `
 | `GITHUB_CLIENT_SECRET` | Bejelentkezéshez | `""` | GitHub OAuth App Client Secret. **Élesben kötelező** |
 | `GITHUB_ORG` | Classroom-hoz igen | `""` | GitHub szervezet neve a repók kereséséhez. **Kötelező a GitHub Classroom integrációhoz** |
 | `GITHUB_ORG_ADMIN_TOKEN` | Classroom-hoz igen | `""` | Personal Access Token (classic) org tulajdonostól, `admin:org` + `repo` scope-pal. **Kötelező a GitHub Classroom integrációhoz** — a szerver ezzel kérdezi le a tanulók repóinak CI státuszát és hívja meg őket az org-ba. Létrehozás: [github.com/settings/tokens](https://github.com/settings/tokens) → „Generate new token (classic)" → `admin:org` + `repo` |
-| `GITHUB_WEBHOOK_SECRET` | **Staging/élesben kötelező** | `""` | Webhook HMAC-SHA256 aláíró kulcs. Staging és production környezetben kötelező — a webhook végpont elutasítja az aláírás nélküli kéréseket. Generálás: `openssl rand -hex 20` |
+| `GITHUB_WEBHOOK_SECRET` | **Ajánlott** | `""` | Webhook HMAC-SHA256 aláíró kulcs. Ha nincs megadva és `WEBHOOK_SKIP_VERIFY` sem `true`, a webhook végpont **elutasít minden kérést**. Generálás: `openssl rand -hex 20` |
+| `WEBHOOK_SKIP_VERIFY` | Nem | `false` | Ha `true`, a webhook végpont elfogadja az aláírás nélküli kéréseket. **Kizárólag fejlesztési környezetben használandó!** |
 
 ---
 

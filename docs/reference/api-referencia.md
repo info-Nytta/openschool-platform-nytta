@@ -26,7 +26,7 @@ Az API JWT (JSON Web Token) alapú hitelesítést használ, cookie-kon keresztü
 
 ### Token frissítés
 
-A frontend a `refresh_token` cookie-t használva a `POST /api/auth/refresh` végpontot hívja, hogy új access tokent kapjon. Az új access token szintén cookie-ként tárolódik.
+A frontend a `refresh_token` cookie-t használva a `POST /api/auth/refresh` végpontot hívja, hogy új access és refresh tokent kapjon (token rotáció). Mindkét új token cookie-ként tárolódik.
 
 ---
 
@@ -50,6 +50,7 @@ Visszatérő státuszkódok:
 | 403 | Jogosultság megtagadva (webhook aláírás hiba) |
 | 404 | Erőforrás nem található |
 | 409 | Ütközés (pl. már beiratkozott, tanúsítvány már létezik) |
+| 413 | Payload túl nagy (webhook végpont max 1 MB) |
 | 422 | Pydantic validációs hiba (hiányzó/érvénytelen mező) |
 | 500 | Szerverhiba (logolva, kliensnek: „Internal server error") |
 
@@ -126,17 +127,19 @@ Az aktuálisan bejelentkezett felhasználó adatai.
 
 ### `POST /api/auth/refresh`
 
-Új access tokent ad ki a refresh token cookie alapján.
+Új access és refresh tokent ad ki a refresh token cookie alapján (token rotáció).
 
 | | |
 |---|---|
 | **Hitelesítés** | `refresh_token` cookie (automatikusan küldve) |
-| **Válasz** | `200` |
+| **Válasz** | `200` — új `access_token` és `refresh_token` cookie-k beállítása |
 | **Hiba** | `401` — nincs/érvénytelen/lejárt refresh token |
+
+> **Token rotáció:** Minden refresh hívás új refresh tokent is kiad, és a korábbi érvénytelenné válik. Ez csökkenti a token-lopás kockázatát.
 
 ```json
 {
-  "access_token": "eyJ...",
+  "access_token": "ok",
   "token_type": "bearer"
 }
 ```
@@ -486,7 +489,7 @@ Feladat manuális teljesítés jelölése.
 | Mező | Típus | Kötelező | Validáció |
 |------|-------|----------|-----------|
 | `exercise_id` | int | igen | - |
-| `status` | string | nem | `"completed"` vagy `"in_progress"`, default: `"completed"` |
+| `status` | string | nem | `"completed"` vagy `"in_progress"` (csak ezek fogadhatóak el), default: `"completed"` |
 
 **Válasz (200):**
 ```json

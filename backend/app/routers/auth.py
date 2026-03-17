@@ -150,8 +150,8 @@ def auth_me(current_user: User = Depends(get_current_user)):
 @router.post("/refresh")
 @limiter.limit("20/minute")
 def auth_refresh(request: Request, db: Session = Depends(get_db)):
-    """Issue a new access token using the refresh token cookie."""
-    from app.auth.jwt import verify_token
+    """Issue new access and refresh tokens using the refresh token cookie (rotation)."""
+    from app.auth.jwt import REFRESH_TOKEN_EXPIRE_DAYS, verify_token
 
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
@@ -169,7 +169,10 @@ def auth_refresh(request: Request, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
+    # Rotate: issue both new access and new refresh tokens
     new_access_token = create_access_token(user.id)
+    new_refresh_token = create_refresh_token(user.id)
+
     resp = Response(content='{"access_token": "ok", "token_type": "bearer"}')
     resp.headers["Content-Type"] = "application/json"
     is_secure = settings.environment != "development"
@@ -179,6 +182,14 @@ def auth_refresh(request: Request, db: Session = Depends(get_db)):
         httponly=True,
         samesite="lax",
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        secure=is_secure,
+    )
+    resp.set_cookie(
+        key="refresh_token",
+        value=new_refresh_token,
+        httponly=True,
+        samesite="lax",
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
         secure=is_secure,
     )
     return resp

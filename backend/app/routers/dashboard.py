@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -71,8 +72,10 @@ def course_progress(course_id: int, db: Session = Depends(get_db), current_user:
 
 
 class ProgressUpdate(BaseModel):
+    """Schema for updating exercise progress status."""
+
     exercise_id: int
-    status: str = "completed"
+    status: Literal["completed", "in_progress"] = "completed"
 
 
 @router.post("/courses/{course_id}/progress")

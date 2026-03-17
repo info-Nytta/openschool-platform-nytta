@@ -1,8 +1,29 @@
+import hashlib
+import hmac
+import json
+
 import pytest
 
 from app.auth.jwt import create_access_token
 from app.models.course import Course, Enrollment, Exercise, Module, Progress, ProgressStatus
 from app.models.user import User, UserRole
+
+TEST_WEBHOOK_SECRET = "test-webhook-secret"
+
+
+def _signed_webhook_post(client, payload: dict, event: str = "workflow_run"):
+    """Send a webhook POST with a valid HMAC-SHA256 signature."""
+    body = json.dumps(payload, separators=(",", ":")).encode()
+    signature = "sha256=" + hmac.new(TEST_WEBHOOK_SECRET.encode(), body, hashlib.sha256).hexdigest()
+    return client.post(
+        "/api/webhooks/github",
+        content=body,
+        headers={
+            "X-GitHub-Event": event,
+            "X-Hub-Signature-256": signature,
+            "Content-Type": "application/json",
+        },
+    )
 
 
 @pytest.fixture
@@ -149,32 +170,28 @@ def test_students_shows_progress(client, mentor, student, db_session, course_wit
 # --- GitHub webhook ---
 
 
-def test_webhook_ignores_non_workflow(client):
-    response = client.post(
-        "/api/webhooks/github",
-        json={"action": "push"},
-        headers={"X-GitHub-Event": "push"},
-    )
+def test_webhook_ignores_non_workflow(client, monkeypatch):
+    monkeypatch.setattr("app.config.settings.github_webhook_secret", TEST_WEBHOOK_SECRET)
+    payload = {"action": "push"}
+    response = _signed_webhook_post(client, payload, event="push")
     assert response.status_code == 200
     assert response.json()["status"] == "ignored"
 
 
-def test_webhook_ignores_failed_runs(client):
+def test_webhook_ignores_failed_runs(client, monkeypatch):
+    monkeypatch.setattr("app.config.settings.github_webhook_secret", TEST_WEBHOOK_SECRET)
     payload = {
         "action": "completed",
         "workflow_run": {"conclusion": "failure"},
         "repository": {"name": "het01-hello-student1"},
     }
-    response = client.post(
-        "/api/webhooks/github",
-        json=payload,
-        headers={"X-GitHub-Event": "workflow_run"},
-    )
+    response = _signed_webhook_post(client, payload)
     assert response.status_code == 200
     assert response.json()["status"] == "ignored"
 
 
-def test_webhook_updates_progress(client, db_session, student, course_with_exercises):
+def test_webhook_updates_progress(client, db_session, student, course_with_exercises, monkeypatch):
+    monkeypatch.setattr("app.config.settings.github_webhook_secret", TEST_WEBHOOK_SECRET)
     enrollment = Enrollment(user_id=student.id, course_id=course_with_exercises.id)
     db_session.add(enrollment)
     db_session.commit()
@@ -184,11 +201,7 @@ def test_webhook_updates_progress(client, db_session, student, course_with_exerc
         "workflow_run": {"conclusion": "success"},
         "repository": {"name": "het01-hello-student1"},
     }
-    response = client.post(
-        "/api/webhooks/github",
-        json=payload,
-        headers={"X-GitHub-Event": "workflow_run"},
-    )
+    response = _signed_webhook_post(client, payload)
     assert response.status_code == 200
     assert response.json()["updated"] is True
 
@@ -198,7 +211,8 @@ def test_webhook_updates_progress(client, db_session, student, course_with_exerc
     assert progress.status == ProgressStatus.completed
 
 
-def test_webhook_no_duplicate_update(client, db_session, student, course_with_exercises):
+def test_webhook_no_duplicate_update(client, db_session, student, course_with_exercises, monkeypatch):
+    monkeypatch.setattr("app.config.settings.github_webhook_secret", TEST_WEBHOOK_SECRET)
     enrollment = Enrollment(user_id=student.id, course_id=course_with_exercises.id)
     db_session.add(enrollment)
 
@@ -212,10 +226,6 @@ def test_webhook_no_duplicate_update(client, db_session, student, course_with_ex
         "workflow_run": {"conclusion": "success"},
         "repository": {"name": "het01-hello-student1"},
     }
-    response = client.post(
-        "/api/webhooks/github",
-        json=payload,
-        headers={"X-GitHub-Event": "workflow_run"},
-    )
+    response = _signed_webhook_post(client, payload)
     assert response.status_code == 200
     assert response.json()["updated"] is False

@@ -18,12 +18,12 @@ def invite_user_to_org(username: str, org: str, admin_token: str) -> bool:
             timeout=10.0,
         )
         if response.status_code in (200, 201):
-            logger.info(f"Invited {username} to {org}")
+            logger.info("Invited %s to %s", username, org)
             return True
-        logger.warning(f"Org invite failed for {username}: {response.status_code} {response.text}")
+        logger.warning("Org invite failed for %s: %s", username, response.status_code)
         return False
-    except httpx.HTTPError as e:
-        logger.error(f"Org invite error for {username}: {e}")
+    except httpx.HTTPError:
+        logger.exception("Org invite error for %s", username)
         return False
 
 
@@ -43,8 +43,8 @@ async def check_exercise_status(owner: str, repo_name: str, github_token: str) -
                 return False
             return runs[0]["conclusion"] == "success"
     except httpx.TimeoutException:
-        logger.warning(f"GitHub API timeout for {owner}/{repo_name}")
+        logger.warning("GitHub API timeout for %s/%s", owner, repo_name)
         return False
-    except httpx.HTTPError as e:
-        logger.error(f"GitHub API error for {owner}/{repo_name}: {e}")
+    except httpx.HTTPError:
+        logger.exception("GitHub API error for %s/%s", owner, repo_name)
         return False

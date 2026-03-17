@@ -42,12 +42,15 @@ async def github_webhook(
     """
     body = await request.body()
 
-    # Verify signature — reject if secret is configured and signature is invalid,
-    # or if in production and no secret is configured
+    # Reject oversized payloads (max 1 MB) before processing
+    if len(body) > 1_048_576:
+        raise HTTPException(status_code=413, detail="Payload too large")
+
+    # Verify signature — reject unsigned webhooks unless explicitly opted out
     if settings.github_webhook_secret:
         if not _verify_signature(body, x_hub_signature_256, settings.github_webhook_secret):
             raise HTTPException(status_code=403, detail="Invalid signature")
-    elif settings.environment in ("production", "staging"):
+    elif not settings.webhook_skip_verify:
         raise HTTPException(status_code=403, detail="Webhook secret not configured")
 
     if x_github_event != "workflow_run":

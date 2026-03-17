@@ -45,6 +45,9 @@ dist/
 build/
 *.egg-info/
 
+# Security reports
+security-reports/
+
 # Verification tests (from course repo)
 tesztek/
 node_modules/

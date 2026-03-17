@@ -15,7 +15,7 @@ if is_postgres:
         "pool_recycle": 3600,
     }
 
-engine = create_engine(settings.database_url, connect_args=connect_args, **pool_kwargs)
+engine = create_engine(settings.database_url, connect_args=connect_args, echo=False, **pool_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
